@@ -20,7 +20,7 @@ public class PaymentRequest
     public string? Email { get; set; }
 
     [JsonPropertyName("metadata")]
-    public object? Metadata { get; set; }
+    public object Metadata { get; set; } = new object[] { };
 }
 
 public class FeeCalculationRequest
