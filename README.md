@@ -225,13 +225,14 @@ To create a refund request via GraphQL:
 
 ```csharp
 using ZarinPal.Models;
+using ZarinPal.Enums
 
 var refundRequest = new RefundCreateRequest
 {
     SessionId = "SESSION_ID", // Session ID of the transaction to refund
     Amount = 1000, // Amount to refund in Rials
     Description = "Refund description", // Optional
-    Method = "INSTANT_PAYOUT", // Optional: Refund method
+    Method = RefundMethod.PAYA, // Optional: Refund method that can be PAYA or CARD
     Reason = "CUSTOMER_REQUEST" // Optional: Refund reason
 };
 
