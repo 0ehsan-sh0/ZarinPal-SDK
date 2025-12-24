@@ -2,6 +2,7 @@ using ZarinPal.Validators;
 using ZarinPal.Models;
 using ZarinPal.Interfaces;
 using System.Text.Json;
+using ZarinPal.Enums;
 
 namespace ZarinPal.Resources;
 
@@ -28,7 +29,7 @@ public class Refunds : BaseResource
         // Validate input data
         Validator.ValidateSessionId(data.SessionId);
         Validator.ValidateAmount(data.Amount);
-        if (!string.IsNullOrEmpty(data.Method))
+        if (data.Method.HasValue)
         {
             Validator.ValidateMethod(data.Method);
         }

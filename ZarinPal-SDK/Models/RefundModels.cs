@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using ZarinPal.Enums;
 
 namespace ZarinPal.Models;
 
@@ -14,7 +15,7 @@ public class RefundCreateRequest
     public string? Description { get; set; }
 
     [JsonPropertyName("method")]
-    public string? Method { get; set; }
+    public RefundMethod? Method { get; set; }
 
     [JsonPropertyName("reason")]
     public string? Reason { get; set; }

@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using ZarinPal.Exceptions;
+using ZarinPal.Enums;
 
 namespace ZarinPal.Validators;
 
@@ -146,16 +147,15 @@ public static class Validator
         }
     }
 
-    public static void ValidateMethod(string method)
+    public static void ValidateMethod(RefundMethod? method)
     {
-        string[] validMethods = { "PAYA", "CARD" };
-        if (string.IsNullOrEmpty(method) || !validMethods.Contains(method))
+        if (method == null)
         {
-            throw new ValidationException("Invalid method. Allowed values are \"PAYA\" or \"CARD\".");
+            throw new ValidationException("Method is required. Allowed values are \"PAYA\" or \"CARD\".");
         }
     }
 
-    public static void ValidateReason(string method)
+    public static void ValidateReason(string reason)
     {
         string[] validReasons = {
             "CUSTOMER_REQUEST",
@@ -163,7 +163,7 @@ public static class Validator
             "SUSPICIOUS_TRANSACTION",
             "OTHER"
         };
-        if (string.IsNullOrEmpty(method) || !validReasons.Contains(method))
+        if (string.IsNullOrEmpty(reason) || !validReasons.Contains(reason))
         {
             throw new ValidationException("Invalid reason. Allowed values are \"CUSTOMER_REQUEST\", \"DUPLICATE_TRANSACTION\", \"SUSPICIOUS_TRANSACTION\", or \"OTHER\".");
         }
