@@ -20,12 +20,16 @@ A comprehensive .NET SDK for integrating with ZarinPal payment gateway services.
 
 ## Installation
 
-To install the ZarinPal SDK, you can add the project reference to your .NET project:
+To install the ZarinPal SDK :
 
-```xml
-<!-- Add project reference to your .csproj file -->
-<ProjectReference Include="path/to/ZarinPal-SDK/ZarinPal-SDK.csproj" />
-```
+1-Easily add it via Nuget package manager gallery just Search :
+`Ehsan.ZarinPal.SDK`
+
+2-Run this command :
+`dotnet add package Ehsan.ZarinPal.SDK`
+
+3-Or in the PMC :
+`NuGet\Install-Package Ehsan.ZarinPal.SDK`
 
 ## Configuration
 
