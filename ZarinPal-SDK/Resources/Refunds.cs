@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using ZarinPal.Validators;
 using ZarinPal.Models;
 using ZarinPal.Interfaces;
@@ -35,7 +36,7 @@ public class Refunds : BaseResource
         }
         if (!string.IsNullOrEmpty(data.Reason))
         {
-            Validator.ValidateReason(data.Reason);
+            Validator.ValidateReason(data.Reason!);
         }
 
         const string query = @"

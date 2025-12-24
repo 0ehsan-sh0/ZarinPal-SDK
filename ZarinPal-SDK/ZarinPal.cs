@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading.Tasks;
 using System.Text;
 using System.Text.Json;
 using ZarinPal.Interfaces;
@@ -12,7 +16,7 @@ namespace ZarinPal;
 /// Main class for interacting with ZarinPal APIs.
 /// Provides access to various resources such as payments, refunds, transactions, etc.
 /// </summary>
-public class ZarinPal : IZarinPalClient
+public class ZarinPal : IZarinPal,IZarinPalClient
 {
     public Payments Payments { get; }
     public Refunds Refunds { get; }

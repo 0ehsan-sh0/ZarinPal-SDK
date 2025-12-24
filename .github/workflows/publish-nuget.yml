@@ -1,0 +1,54 @@
+name: Publish Multi-Target NuGet Package
+
+on:
+  push:
+    branches:
+      - main        # or your main development branch
+  push:
+    tags:
+      - 'v*'        # trigger on tags like v1.0.0
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Setup .NET SDK
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '10.0.x' # latest SDK for multi-target
+
+      # 3. Restore dependencies
+      - name: Restore dependencies
+        run: dotnet restore ./ZarinPal-SDK/ZarinPal-SDK.csproj
+
+      # 4. Build all target frameworks
+      - name: Build
+        run: dotnet build ./ZarinPal-SDK/ZarinPal-SDK.csproj --configuration Release --no-restore
+
+      # 5. Pack all target frameworks
+      - name: Pack NuGet package
+        run: dotnet pack ./ZarinPal-SDK/ZarinPal-SDK.csproj \
+              --configuration Release \
+              --output ./artifacts \
+              --no-build \
+              /p:IncludeSymbols=true \
+              /p:IncludeSource=true
+
+      # 6. Push package to NuGet.org
+      - name: Push NuGet package
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          for nupkg in ./artifacts/*.nupkg; do
+            echo "Pushing $nupkg"
+            dotnet nuget push "$nupkg" \
+              --api-key $NUGET_API_KEY \
+              --source https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+          done
