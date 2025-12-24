@@ -1,54 +1,42 @@
-name: Publish Multi-Target NuGet Package
+name: Publish NuGet Package
 
 on:
   push:
     branches:
-      - main        # or your main development branch
-  push:
-    tags:
-      - 'v*'        # trigger on tags like v1.0.0
+      - main   # Trigger when pushing to main branch
+  workflow_dispatch:   # Allows manual trigger
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
+      # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Setup .NET SDK
+      # Step 2: Setup .NET SDK
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '10.0.x' # latest SDK for multi-target
+          dotnet-version: 10.0.x   # Match your SDK version
 
-      # 3. Restore dependencies
+      # Step 3: Restore dependencies
       - name: Restore dependencies
-        run: dotnet restore ./ZarinPal-SDK/ZarinPal-SDK.csproj
+        run: dotnet restore
+        working-directory: ./ZarinPal-SDK
 
-      # 4. Build all target frameworks
-      - name: Build
-        run: dotnet build ./ZarinPal-SDK/ZarinPal-SDK.csproj --configuration Release --no-restore
+      # Step 4: Build project
+      - name: Build project
+        run: dotnet build --configuration Release
+        working-directory: ./ZarinPal-SDK
 
-      # 5. Pack all target frameworks
+      # Step 5: Pack NuGet package
       - name: Pack NuGet package
-        run: dotnet pack ./ZarinPal-SDK/ZarinPal-SDK.csproj \
-              --configuration Release \
-              --output ./artifacts \
-              --no-build \
-              /p:IncludeSymbols=true \
-              /p:IncludeSource=true
+        run: dotnet pack --configuration Release --no-build --output ./nupkg
+        working-directory: ./ZarinPal-SDK
 
-      # 6. Push package to NuGet.org
-      - name: Push NuGet package
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-        run: |
-          for nupkg in ./artifacts/*.nupkg; do
-            echo "Pushing $nupkg"
-            dotnet nuget push "$nupkg" \
-              --api-key $NUGET_API_KEY \
-              --source https://api.nuget.org/v3/index.json \
-              --skip-duplicate
-          done
+      # Step 6: Publish package to NuGet.org
+      - name: Publish to NuGet
+        run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+        working-directory: ./ZarinPal-SDK
