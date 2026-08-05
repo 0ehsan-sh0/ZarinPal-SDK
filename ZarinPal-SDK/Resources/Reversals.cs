@@ -1,8 +1,8 @@
+using System.Threading;
 using System.Threading.Tasks;
 using ZarinPal.Validators;
 using ZarinPal.Models;
 using ZarinPal.Interfaces;
-using System.Text.Json;
 
 namespace ZarinPal.Resources;
 
@@ -25,13 +25,15 @@ public class Reversals : BaseResource
     /// Reverse a transaction.
     /// </summary>
     /// <param name="data">The reversal request data.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     /// <returns>The response from the API.</returns>
-    public async Task<JsonElement> ReverseAsync(ReversalRequest data)
+    public async Task<ReversalResult> ReverseAsync(ReversalRequest data, CancellationToken cancellationToken = default)
     {
         // Validate input data
         Validator.ValidateAuthority(data.Authority);
 
         // Make the API request
-        return await Client.RequestAsync("POST", _endpoint, data);
+        var result = await Client.RequestAsync<ReversalResult>("POST", _endpoint, data, cancellationToken);
+        return result ?? new ReversalResult();
     }
 }

@@ -1,7 +1,7 @@
-using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using ZarinPal.Interfaces;
-using ZarinPal.Validators;
+using ZarinPal.Models;
 
 namespace ZarinPal.Resources;
 
@@ -23,10 +23,12 @@ public class Unverified : BaseResource
     /// <summary>
     /// Retrieve a list of unverified payments.
     /// </summary>
-    /// <returns>A promise resolving to the list of unverified payments.</returns>
-    public async Task<JsonElement> ListAsync()
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <returns>The unverified payments result.</returns>
+    public async Task<UnverifiedResult> ListAsync(CancellationToken cancellationToken = default)
     {
         // Make the API request
-        return await Client.RequestAsync("POST", _endpoint, new { });
+        var result = await Client.RequestAsync<UnverifiedResult>("POST", _endpoint, new { }, cancellationToken);
+        return result ?? new UnverifiedResult();
     }
 }

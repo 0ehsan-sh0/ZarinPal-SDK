@@ -1,7 +1,8 @@
+using System.Threading;
+using System.Threading.Tasks;
 using ZarinPal.Validators;
 using ZarinPal.Models;
 using ZarinPal.Interfaces;
-using System.Text.Json;
 
 namespace ZarinPal.Resources;
 
@@ -24,14 +25,16 @@ public class Verifications : BaseResource
     /// Verify a payment transaction.
     /// </summary>
     /// <param name="data">The verification data.</param>
-    /// <returns>A promise resolving to the verification result.</returns>
-    public async Task<JsonElement> VerifyAsync(VerificationRequest data)
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <returns>The verification result.</returns>
+    public async Task<VerifyResult> VerifyAsync(VerificationRequest data, CancellationToken cancellationToken = default)
     {
         // Validate input data
         Validator.ValidateAmount(data.Amount);
         Validator.ValidateAuthority(data.Authority);
 
         // Make the API request
-        return await Client.RequestAsync("POST", _endpoint, data);
+        var result = await Client.RequestAsync<VerifyResult>("POST", _endpoint, data, cancellationToken);
+        return result ?? new VerifyResult();
     }
 }

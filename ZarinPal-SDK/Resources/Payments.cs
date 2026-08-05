@@ -1,8 +1,8 @@
+using System.Threading;
 using System.Threading.Tasks;
 using ZarinPal.Validators;
 using ZarinPal.Models;
 using ZarinPal.Interfaces;
-using System.Text.Json;
 
 namespace ZarinPal.Resources;
 
@@ -26,8 +26,9 @@ public class Payments : BaseResource
     /// Create a payment request.
     /// </summary>
     /// <param name="data">The payment request data.</param>
-    /// <returns>The response from the API.</returns>
-    public async Task<JsonElement> CreateAsync(PaymentRequest data)
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <returns>The response from the API containing payment authority.</returns>
+    public async Task<PaymentResult> CreateAsync(PaymentRequest data, CancellationToken cancellationToken = default)
     {
         // Validate input data
         Validator.ValidateAmount(data.Amount);
@@ -36,15 +37,17 @@ public class Payments : BaseResource
         Validator.ValidateEmail(data.Email);
 
         // Make the API request
-        return await Client.RequestAsync("POST", _endpoint, data);
+        var result = await Client.RequestAsync<PaymentResult>("POST", _endpoint, data, cancellationToken);
+        return result ?? new PaymentResult();
     }
 
     /// <summary>
     /// Calculate the transaction fee before creating a payment request.
     /// </summary>
     /// <param name="data">The fee calculation request data.</param>
-    /// <returns>The response from the API.</returns>
-    public async Task<JsonElement> FeeCalculationAsync(FeeCalculationRequest data)
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <returns>The fee calculation response from the API.</returns>
+    public async Task<FeeCalculationResult> FeeCalculationAsync(FeeCalculationRequest data, CancellationToken cancellationToken = default)
     {
         if (!string.IsNullOrEmpty(data.MerchantId))
         {
@@ -53,7 +56,8 @@ public class Payments : BaseResource
         Validator.ValidateAmount(data.Amount);
         Validator.ValidateCurrency(data.Currency);
 
-        return await Client.RequestAsync("POST", "/pg/v4/payment/feeCalculation.json", data);
+        var result = await Client.RequestAsync<FeeCalculationResult>("POST", "/pg/v4/payment/feeCalculation.json", data, cancellationToken);
+        return result ?? new FeeCalculationResult();
     }
 
     /// <summary>

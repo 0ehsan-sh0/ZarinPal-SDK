@@ -1,8 +1,9 @@
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using ZarinPal.Validators;
 using ZarinPal.Models;
 using ZarinPal.Interfaces;
-using System.Text.Json;
 using ZarinPal.Enums;
 
 namespace ZarinPal.Resources;
@@ -24,8 +25,9 @@ public class Refunds : BaseResource
     /// Create a refund request via GraphQL.
     /// </summary>
     /// <param name="data">The refund request data.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     /// <returns>The response from the GraphQL API.</returns>
-    public async Task<JsonElement> CreateAsync(RefundCreateRequest data)
+    public async Task<RefundCreateResult> CreateAsync(RefundCreateRequest data, CancellationToken cancellationToken = default)
     {
         // Validate input data
         Validator.ValidateSessionId(data.SessionId);
@@ -75,16 +77,17 @@ public class Refunds : BaseResource
             reason = data.Reason,
         };
 
-        // Make the GraphQL request
-        return await Client.GraphqlAsync(query, variables);
+        var result = await Client.GraphqlAsync<RefundCreateResult>(query, variables, dataPath: "resource", cancellationToken: cancellationToken);
+        return result ?? new RefundCreateResult();
     }
 
     /// <summary>
     /// Retrieve details of a specific refund.
     /// </summary>
     /// <param name="refundId">The ID of the refund to retrieve.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     /// <returns>The response containing refund details.</returns>
-    public async Task<JsonElement> RetrieveAsync(string refundId)
+    public async Task<RefundItem> RetrieveAsync(string refundId, CancellationToken cancellationToken = default)
     {
         const string query = @"
           query GetRefund($id: ID!) {
@@ -103,16 +106,17 @@ public class Refunds : BaseResource
             id = refundId,
         };
 
-        // Make the GraphQL request
-        return await Client.GraphqlAsync(query, variables);
+        var result = await Client.GraphqlAsync<RefundItem>(query, variables, dataPath: "refund", cancellationToken: cancellationToken);
+        return result ?? new RefundItem();
     }
 
     /// <summary>
     /// List refunds with optional pagination.
     /// </summary>
     /// <param name="data">The listing parameters.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
     /// <returns>The response containing a list of refunds.</returns>
-    public async Task<JsonElement> ListAsync(RefundListRequest data)
+    public async Task<List<RefundItem>> ListAsync(RefundListRequest data, CancellationToken cancellationToken = default)
     {
         // Validate input data
         Validator.ValidateTerminalId(data.TerminalId);
@@ -148,7 +152,7 @@ public class Refunds : BaseResource
             offset = data.Offset,
         };
 
-        // Make the GraphQL request
-        return await Client.GraphqlAsync(query, variables);
+        var result = await Client.GraphqlAsync<List<RefundItem>>(query, variables, dataPath: "refunds", cancellationToken: cancellationToken);
+        return result ?? new List<RefundItem>();
     }
 }

@@ -1,8 +1,9 @@
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using ZarinPal.Validators;
 using ZarinPal.Models;
 using ZarinPal.Interfaces;
-using System.Text.Json;
 
 namespace ZarinPal.Resources;
 
@@ -23,8 +24,9 @@ public class Transactions : BaseResource
     /// Retrieve a list of transactions via GraphQL.
     /// </summary>
     /// <param name="data">The transaction query parameters.</param>
-    /// <returns>A promise resolving to the list of transactions.</returns>
-    public async Task<JsonElement> ListAsync(TransactionListRequest data)
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <returns>A list of transaction items.</returns>
+    public async Task<List<TransactionItem>> ListAsync(TransactionListRequest data, CancellationToken cancellationToken = default)
     {
         // Validate input data
         Validator.ValidateTerminalId(data.TerminalId);
@@ -66,7 +68,7 @@ public class Transactions : BaseResource
             offset = data.Offset,
         };
 
-        // Make the GraphQL request
-        return await Client.GraphqlAsync(query, variables);
+        var result = await Client.GraphqlAsync<List<TransactionItem>>(query, variables, dataPath: "transactions", cancellationToken: cancellationToken);
+        return result ?? new List<TransactionItem>();
     }
 }
