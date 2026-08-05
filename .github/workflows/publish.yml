@@ -17,26 +17,36 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Setup .NET SDK
+      # 2. Setup .NET SDK (using LTS 8.0)
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x' # latest SDK for multi-target
-          dotnet-quality: 'preview'
+          dotnet-version: '8.0.x'
 
       # 3. Restore dependencies
       - name: Restore dependencies
-        run: dotnet restore ZarinPal-SDK.slnx
+        run: |
+          dotnet restore ./ZarinPal-SDK/ZarinPal-SDK.csproj
+          dotnet restore ./tests/ZarinPal.SDK.UnitTests/ZarinPal.SDK.UnitTests.csproj
+          dotnet restore ./tests/ZarinPal.SDK.IntegrationTests/ZarinPal.SDK.IntegrationTests.csproj
+          dotnet restore ./tests/ZarinPal.SDK.E2ETests/ZarinPal.SDK.E2ETests.csproj
 
-      # 4. Build solution
+      # 4. Build projects
       - name: Build
-        run: dotnet build ZarinPal-SDK.slnx --configuration Release --no-restore
+        run: |
+          dotnet build ./ZarinPal-SDK/ZarinPal-SDK.csproj --configuration Release --no-restore
+          dotnet build ./tests/ZarinPal.SDK.UnitTests/ZarinPal.SDK.UnitTests.csproj --configuration Release --no-restore
+          dotnet build ./tests/ZarinPal.SDK.IntegrationTests/ZarinPal.SDK.IntegrationTests.csproj --configuration Release --no-restore
+          dotnet build ./tests/ZarinPal.SDK.E2ETests/ZarinPal.SDK.E2ETests.csproj --configuration Release --no-restore
 
       # 5. Run test suite (fails job if any test fails)
       - name: Run tests
-        run: dotnet test ZarinPal-SDK.slnx --configuration Release --no-build --verbosity normal
+        run: |
+          dotnet test ./tests/ZarinPal.SDK.UnitTests/ZarinPal.SDK.UnitTests.csproj --configuration Release --no-build --verbosity normal
+          dotnet test ./tests/ZarinPal.SDK.IntegrationTests/ZarinPal.SDK.IntegrationTests.csproj --configuration Release --no-build --verbosity normal
+          dotnet test ./tests/ZarinPal.SDK.E2ETests/ZarinPal.SDK.E2ETests.csproj --configuration Release --no-build --verbosity normal
 
-      # 5. Pack all target frameworks
+      # 6. Pack SDK package
       - name: Pack NuGet package
         run: |
           dotnet pack ./ZarinPal-SDK/ZarinPal-SDK.csproj \
@@ -46,14 +56,14 @@ jobs:
             -p:IncludeSymbols=true \
             -p:IncludeSource=true
 
-      # 6. NuGet login via OIDC (Trusted Publishing)
+      # 7. NuGet login via OIDC (Trusted Publishing)
       - name: NuGet login
         uses: NuGet/login@v1
         id: nuget-login
         with:
           user: Exhsn
 
-      # 7. Push package to NuGet.org
+      # 8. Push package to NuGet.org
       - name: Push NuGet package
         run: |
           for nupkg in ./artifacts/*.nupkg; do
