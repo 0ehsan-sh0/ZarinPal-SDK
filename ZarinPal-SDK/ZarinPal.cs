@@ -4,6 +4,7 @@ using System.Text.Json;
 using ZarinPal.Interfaces;
 using ZarinPal.Resources;
 using ZarinPal.Exceptions;
+using ZarinPal.Models;
 using System.Net;
 
 namespace ZarinPal;
@@ -131,6 +132,105 @@ public class ZarinPal : IZarinPalClient
     }
 
     public string GetBaseUrl() => BaseUrl;
+
+    /// <summary>
+    /// Convenience method for creating a payment request.
+    /// Equivalent to <see cref="Payments.CreateAsync(PaymentRequest)"/>.
+    /// </summary>
+    public Task<JsonElement> CreateAsync(PaymentRequest data)
+    {
+        return Payments.CreateAsync(data);
+    }
+
+    /// <summary>
+    /// Convenience method for calculating the transaction fee.
+    /// Equivalent to <see cref="Payments.FeeCalculationAsync(FeeCalculationRequest)"/>.
+    /// </summary>
+    public Task<JsonElement> CalculateFeeAsync(FeeCalculationRequest data)
+    {
+        return Payments.FeeCalculationAsync(data);
+    }
+
+    /// <summary>
+    /// Convenience method for getting the payment redirect URL.
+    /// Equivalent to <see cref="Payments.GetRedirectUrl(string)"/>.
+    /// </summary>
+    public string GetRedirectUrl(string authority)
+    {
+        return Payments.GetRedirectUrl(authority);
+    }
+
+    /// <summary>
+    /// Convenience method for verifying a payment transaction.
+    /// Equivalent to <see cref="Verifications.VerifyAsync(VerificationRequest)"/>.
+    /// </summary>
+    public Task<JsonElement> VerifyAsync(VerificationRequest data)
+    {
+        return Verifications.VerifyAsync(data);
+    }
+
+    /// <summary>
+    /// Convenience method for inquiring about a transaction's status.
+    /// Equivalent to <see cref="Inquiries.InquireAsync(InquiryRequest)"/>.
+    /// </summary>
+    public Task<JsonElement> InquireAsync(InquiryRequest data)
+    {
+        return Inquiries.InquireAsync(data);
+    }
+
+    /// <summary>
+    /// Convenience method for reversing a transaction.
+    /// Equivalent to <see cref="Reversals.ReverseAsync(ReversalRequest)"/>.
+    /// </summary>
+    public Task<JsonElement> ReverseAsync(ReversalRequest data)
+    {
+        return Reversals.ReverseAsync(data);
+    }
+
+    /// <summary>
+    /// Convenience method for listing transactions.
+    /// Equivalent to <see cref="Transactions.ListAsync(TransactionListRequest)"/>.
+    /// </summary>
+    public Task<JsonElement> ListTransactionsAsync(TransactionListRequest data)
+    {
+        return Transactions.ListAsync(data);
+    }
+
+    /// <summary>
+    /// Convenience method for listing unverified payments.
+    /// Equivalent to <see cref="Unverified.ListAsync"/>.
+    /// </summary>
+    public Task<JsonElement> ListUnverifiedAsync()
+    {
+        return Unverified.ListAsync();
+    }
+
+    /// <summary>
+    /// Convenience method for creating a refund request.
+    /// Equivalent to <see cref="Refunds.CreateAsync(RefundCreateRequest)"/>.
+    /// </summary>
+    public Task<JsonElement> CreateRefundAsync(RefundCreateRequest data)
+    {
+        return Refunds.CreateAsync(data);
+    }
+
+    /// <summary>
+    /// Convenience method for retrieving a specific refund.
+    /// Equivalent to <see cref="Refunds.RetrieveAsync(string)"/>.
+    /// </summary>
+    public Task<JsonElement> RetrieveRefundAsync(string refundId)
+    {
+        return Refunds.RetrieveAsync(refundId);
+    }
+
+    /// <summary>
+    /// Convenience method for listing refunds.
+    /// Equivalent to <see cref="Refunds.ListAsync(RefundListRequest)"/>.
+    /// </summary>
+    public Task<JsonElement> ListRefundsAsync(RefundListRequest data)
+    {
+        return Refunds.ListAsync(data);
+    }
 
     public void Dispose()
     {

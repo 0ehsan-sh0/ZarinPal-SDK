@@ -2,6 +2,8 @@
 
 A comprehensive .NET SDK for integrating with ZarinPal payment gateway services. This SDK provides an easy-to-use interface for processing payments, refunds, transaction inquiries, and more.
 
+> **Note:** All operations can be called directly on the `zarinPal` instance (e.g. `await zarinPal.CreateAsync(...)`). The resource-based methods (e.g. `await zarinPal.Payments.CreateAsync(...)`) **still work and are fully supported** for backward compatibility.
+
 ## Table of Contents
 - [Installation](#installation)
 - [Configuration](#configuration)
@@ -52,6 +54,22 @@ var zarinPal = new ZarinPal(config);
 
 ## Usage
 
+All operations are available directly on the `zarinPal` instance. The table below maps each direct method to its equivalent resource-based method (still supported):
+
+| Direct method | Resource-based equivalent |
+|---|---|
+| `zarinPal.CreateAsync(paymentRequest)` | `zarinPal.Payments.CreateAsync(paymentRequest)` |
+| `zarinPal.CalculateFeeAsync(feeRequest)` | `zarinPal.Payments.FeeCalculationAsync(feeRequest)` |
+| `zarinPal.GetRedirectUrl(authority)` | `zarinPal.Payments.GetRedirectUrl(authority)` |
+| `zarinPal.VerifyAsync(verificationRequest)` | `zarinPal.Verifications.VerifyAsync(verificationRequest)` |
+| `zarinPal.InquireAsync(inquiryRequest)` | `zarinPal.Inquiries.InquireAsync(inquiryRequest)` |
+| `zarinPal.ReverseAsync(reversalRequest)` | `zarinPal.Reversals.ReverseAsync(reversalRequest)` |
+| `zarinPal.ListTransactionsAsync(listRequest)` | `zarinPal.Transactions.ListAsync(listRequest)` |
+| `zarinPal.ListUnverifiedAsync()` | `zarinPal.Unverified.ListAsync()` |
+| `zarinPal.CreateRefundAsync(refundRequest)` | `zarinPal.Refunds.CreateAsync(refundRequest)` |
+| `zarinPal.RetrieveRefundAsync(refundId)` | `zarinPal.Refunds.RetrieveAsync(refundId)` |
+| `zarinPal.ListRefundsAsync(listRequest)` | `zarinPal.Refunds.ListAsync(listRequest)` |
+
 ### Creating a Payment
 
 To create a payment request:
@@ -70,13 +88,13 @@ var paymentRequest = new PaymentRequest
 
 try
 {
-    var response = await zarinPal.Payments.CreateAsync(paymentRequest);
+    var response = await zarinPal.CreateAsync(paymentRequest);
     
     // Extract the authority from the response
     var authority = response.GetProperty("data").GetProperty("authority").GetString();
     
     // Redirect user to payment page
-    var paymentUrl = zarinPal.GetBaseUrl() + "/pg/StartPay/" + authority;
+    var paymentUrl = zarinPal.GetRedirectUrl(authority);
 }
 catch (Exception ex)
 {
@@ -84,6 +102,8 @@ catch (Exception ex)
     Console.WriteLine($"Error creating payment: {ex.Message}");
 }
 ```
+
+> Equivalent resource-based call (still supported): `zarinPal.Payments.CreateAsync(paymentRequest)`
 
 ### Verifying a Payment
 
@@ -100,7 +120,7 @@ var verificationRequest = new VerificationRequest
 
 try
 {
-    var response = await zarinPal.Verifications.VerifyAsync(verificationRequest);
+    var response = await zarinPal.VerifyAsync(verificationRequest);
     
     // Check if verification was successful
     var status = response.GetProperty("data").GetProperty("code").GetInt32();
@@ -132,7 +152,7 @@ var inquiryRequest = new InquiryRequest
 
 try
 {
-    var response = await zarinPal.Inquiries.InquireAsync(inquiryRequest);
+    var response = await zarinPal.InquireAsync(inquiryRequest);
     
     // Process the response
     var status = response.GetProperty("data").GetProperty("code").GetInt32();
@@ -159,7 +179,7 @@ var reversalRequest = new ReversalRequest
 
 try
 {
-    var response = await zarinPal.Reversals.ReverseAsync(reversalRequest);
+    var response = await zarinPal.ReverseAsync(reversalRequest);
     
     // Process the response
     var status = response.GetProperty("data").GetProperty("code").GetInt32();
@@ -188,7 +208,7 @@ var transactionListRequest = new TransactionListRequest
 
 try
 {
-    var response = await zarinPal.Transactions.ListAsync(transactionListRequest);
+    var response = await zarinPal.ListTransactionsAsync(transactionListRequest);
     
     // Process the response
     Console.WriteLine(response.ToString());
@@ -207,7 +227,7 @@ To retrieve a list of unverified payments:
 ```csharp
 try
 {
-    var response = await zarinPal.Unverified.ListAsync();
+    var response = await zarinPal.ListUnverifiedAsync();
     
     // Process the response
     Console.WriteLine(response.ToString());
@@ -237,7 +257,7 @@ var refundRequest = new RefundCreateRequest
 
 try
 {
-    var response = await zarinPal.Refunds.CreateAsync(refundRequest);
+    var response = await zarinPal.CreateRefundAsync(refundRequest);
     
     // Process the response
     Console.WriteLine(response.ToString());
@@ -265,7 +285,7 @@ var feeCalculationRequest = new FeeCalculationRequest
 
 try
 {
-    var response = await zarinPal.Payments.FeeCalculationAsync(feeCalculationRequest);
+    var response = await zarinPal.CalculateFeeAsync(feeCalculationRequest);
     
     // Process the response
     Console.WriteLine(response.ToString());
@@ -287,8 +307,8 @@ The SDK throws specific exceptions for different error scenarios:
 ```csharp
 try
 {
-    // SDK operations
-    var response = await zarinPal.Payments.CreateAsync(paymentRequest);
+    // SDK operations (direct or resource-based calls both work)
+    var response = await zarinPal.CreateAsync(paymentRequest);
 }
 catch (ZarinPal.Exceptions.ValidationException validationEx)
 {
