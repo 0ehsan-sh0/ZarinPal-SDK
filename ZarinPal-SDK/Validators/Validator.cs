@@ -8,36 +8,64 @@ using ZarinPal.Enums;
 namespace ZarinPal.Validators;
 
 /// <summary>
-/// Data class for wage information
-/// </summary>
-public class Wage
-{
-    public string Iban { get; set; } = string.Empty;
-    public decimal Amount { get; set; }
-    public string Description { get; set; } = string.Empty;
-}
-
-/// <summary>
 /// Class containing validation methods for various input parameters
 /// </summary>
-public static class Validator
+public static partial class Validator
 {
+#if NET8_0_OR_GREATER
+    [GeneratedRegex(@"^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$", RegexOptions.IgnoreCase)]
+    private static partial Regex MerchantIdRegex();
+
+    [GeneratedRegex(@"^[AS][0-9a-zA-Z]{35}$")]
+    private static partial Regex AuthorityRegex();
+
+    [GeneratedRegex(@"^https?://[a-zA-Z0-9.-]+(?::[0-9]+)?(?:/.*)?$")]
+    private static partial Regex CallbackUrlRegex();
+
+    [GeneratedRegex(@"^09[0-9]{9}$")]
+    private static partial Regex MobileRegex();
+
+    [GeneratedRegex(@"^[^\s@]+@[^\s@]+\.[^\s@]+$")]
+    private static partial Regex EmailRegex();
+#else
+    private static readonly Regex MerchantIdRegexInstance = new(@"^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex AuthorityRegexInstance = new(@"^[AS][0-9a-zA-Z]{35}$", RegexOptions.Compiled);
+    private static readonly Regex CallbackUrlRegexInstance = new(@"^https?://[a-zA-Z0-9.-]+(?::[0-9]+)?(?:/.*)?$", RegexOptions.Compiled);
+    private static readonly Regex MobileRegexInstance = new(@"^09[0-9]{9}$", RegexOptions.Compiled);
+    private static readonly Regex EmailRegexInstance = new(@"^[^\s@]+@[^\s@]+\.[^\s@]+$", RegexOptions.Compiled);
+
+    private static Regex MerchantIdRegex() => MerchantIdRegexInstance;
+    private static Regex AuthorityRegex() => AuthorityRegexInstance;
+    private static Regex CallbackUrlRegex() => CallbackUrlRegexInstance;
+    private static Regex MobileRegex() => MobileRegexInstance;
+    private static Regex EmailRegex() => EmailRegexInstance;
+#endif
+
+    /// <summary>
+    /// Validates the merchant ID format.
+    /// </summary>
     public static void ValidateMerchantId(string? merchantId)
     {
-        if (string.IsNullOrEmpty(merchantId) || !Regex.IsMatch(merchantId, @"^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"))
+        if (string.IsNullOrEmpty(merchantId) || !MerchantIdRegex().IsMatch(merchantId))
         {
             throw new ValidationException("Invalid merchant_id format. It should be a valid UUID.");
         }
     }
 
+    /// <summary>
+    /// Validates the authority string format.
+    /// </summary>
     public static void ValidateAuthority(string authority)
     {
-        if (string.IsNullOrEmpty(authority) || !Regex.IsMatch(authority, @"^[AS][0-9a-zA-Z]{35}$"))
+        if (string.IsNullOrEmpty(authority) || !AuthorityRegex().IsMatch(authority))
         {
             throw new ValidationException("Invalid authority format. It should be a string starting with \"A\" or \"S\" followed by 35 alphanumeric characters.");
         }
     }
 
+    /// <summary>
+    /// Validates payment amount.
+    /// </summary>
     public static void ValidateAmount(decimal amount, decimal minAmount = 1000)
     {
         if (amount < minAmount)
@@ -46,30 +74,42 @@ public static class Validator
         }
     }
 
+    /// <summary>
+    /// Validates callback URL format.
+    /// </summary>
     public static void ValidateCallbackUrl(string callbackUrl)
     {
-        if (string.IsNullOrEmpty(callbackUrl) || !Regex.IsMatch(callbackUrl, @"^https?://[a-zA-Z0-9.-]+(?::[0-9]+)?(?:/.*)?$"))
+        if (string.IsNullOrEmpty(callbackUrl) || !CallbackUrlRegex().IsMatch(callbackUrl))
         {
             throw new ValidationException("Invalid callback URL format. It should start with http:// or https:// and include a valid host.");
         }
     }
 
+    /// <summary>
+    /// Validates mobile number format.
+    /// </summary>
     public static void ValidateMobile(string? mobile)
     {
-        if (!string.IsNullOrEmpty(mobile) && !Regex.IsMatch(mobile, @"^09[0-9]{9}$"))
+        if (!string.IsNullOrEmpty(mobile) && !MobileRegex().IsMatch(mobile))
         {
             throw new ValidationException("Invalid mobile number format.");
         }
     }
 
+    /// <summary>
+    /// Validates email address format.
+    /// </summary>
     public static void ValidateEmail(string? email)
     {
-        if (!string.IsNullOrEmpty(email) && !Regex.IsMatch(email, @"^[^\s@]+@[^\s@]+\.[^\s@]+$"))
+        if (!string.IsNullOrEmpty(email) && !EmailRegex().IsMatch(email))
         {
             throw new ValidationException("Invalid email format.");
         }
     }
 
+    /// <summary>
+    /// Validates currency code.
+    /// </summary>
     public static void ValidateCurrency(string? currency)
     {
         string[] validCurrencies = { "IRR", "IRT" };
@@ -79,28 +119,9 @@ public static class Validator
         }
     }
 
-    public static void ValidateWages(IEnumerable<Wage>? wages)
-    {
-        if (wages != null)
-        {
-            foreach (var wage in wages)
-            {
-                if (!Regex.IsMatch(wage.Iban, @"^[A-Z]{2}[0-9]{2}[0-9A-Z]{1,30}$"))
-                {
-                    throw new ValidationException("Invalid IBAN format in wages.");
-                }
-                if (wage.Amount <= 0)
-                {
-                    throw new ValidationException("Wage amount must be greater than zero.");
-                }
-                if (wage.Description.Length > 255)
-                {
-                    throw new ValidationException("Wage description must be provided and less than 255 characters.");
-                }
-            }
-        }
-    }
-
+    /// <summary>
+    /// Validates terminal ID parameter.
+    /// </summary>
     public static void ValidateTerminalId(string? terminalId)
     {
         if (string.IsNullOrEmpty(terminalId))
@@ -109,6 +130,9 @@ public static class Validator
         }
     }
 
+    /// <summary>
+    /// Validates transaction filter parameter.
+    /// </summary>
     public static void ValidateFilter(string? filter)
     {
         string[] validFilters = { "PAID", "VERIFIED", "TRASH", "ACTIVE", "REFUNDED" };
@@ -118,6 +142,9 @@ public static class Validator
         }
     }
 
+    /// <summary>
+    /// Validates pagination limit parameter.
+    /// </summary>
     public static void ValidateLimit(int? limit)
     {
         if (limit != null && limit <= 0)
@@ -126,6 +153,9 @@ public static class Validator
         }
     }
 
+    /// <summary>
+    /// Validates pagination offset parameter.
+    /// </summary>
     public static void ValidateOffset(int? offset)
     {
         if (offset != null && offset < 0)
@@ -134,14 +164,9 @@ public static class Validator
         }
     }
 
-    public static void ValidateCardPan(string? cardPan)
-    {
-        if (!string.IsNullOrEmpty(cardPan) && !Regex.IsMatch(cardPan, @"^[0-9]{16}$"))
-        {
-            throw new ValidationException("Invalid card PAN format. It should be a 16-digit number.");
-        }
-    }
-
+    /// <summary>
+    /// Validates refund session ID.
+    /// </summary>
     public static void ValidateSessionId(string? sessionId)
     {
         if (string.IsNullOrEmpty(sessionId))
@@ -150,6 +175,9 @@ public static class Validator
         }
     }
 
+    /// <summary>
+    /// Validates refund method parameter.
+    /// </summary>
     public static void ValidateMethod(RefundMethod? method)
     {
         if (method == null)
@@ -158,6 +186,9 @@ public static class Validator
         }
     }
 
+    /// <summary>
+    /// Validates refund reason parameter.
+    /// </summary>
     public static void ValidateReason(string reason)
     {
         string[] validReasons = {
