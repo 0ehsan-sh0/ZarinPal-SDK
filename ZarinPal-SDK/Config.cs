@@ -1,3 +1,5 @@
+using System;
+
 namespace ZarinPal;
 
 /// <summary>
@@ -19,4 +21,14 @@ public class Config
     /// Whether to use the sandbox environment.
     /// </summary>
     public bool Sandbox { get; set; } = false;
+
+    /// <summary>
+    /// Custom User-Agent header value.
+    /// </summary>
+    public string UserAgent { get; set; } = "ZarinPalSdk/v1 (.NET)";
+
+    /// <summary>
+    /// Request timeout for HTTP operations.
+    /// </summary>
+    public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
 }
