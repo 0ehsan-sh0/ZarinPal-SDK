@@ -44,7 +44,7 @@ jobs:
       - name: NuGet login
         uses: NuGet/login@v1
         with:
-          user: 0ehsan-sh0 # Replace with your actual NuGet.org username/org if it differs
+          user: Exhsn
 
       # 7. Push package to NuGet.org
       - name: Push NuGet package
