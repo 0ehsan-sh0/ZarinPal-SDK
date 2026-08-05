@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using ZarinPal.Constants;
 using ZarinPal.Validators;
 using ZarinPal.Models;
 using ZarinPal.Interfaces;
@@ -11,8 +12,6 @@ namespace ZarinPal.Resources;
 /// </summary>
 public class Verifications : BaseResource
 {
-    private readonly string _endpoint = "/pg/v4/payment/verify.json";
-
     /// <summary>
     /// Creates an instance of Verifications.
     /// </summary>
@@ -34,7 +33,7 @@ public class Verifications : BaseResource
         Validator.ValidateAuthority(data.Authority);
 
         // Make the API request
-        var result = await Client.RequestAsync<VerifyResult>("POST", _endpoint, data, cancellationToken);
+        var result = await Client.RequestAsync<VerifyResult>("POST", Endpoints.Verify, data, cancellationToken);
         return result ?? new VerifyResult();
     }
 }

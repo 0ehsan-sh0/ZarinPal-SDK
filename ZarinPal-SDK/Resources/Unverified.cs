@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using ZarinPal.Constants;
 using ZarinPal.Interfaces;
 using ZarinPal.Models;
 
@@ -10,8 +11,6 @@ namespace ZarinPal.Resources;
 /// </summary>
 public class Unverified : BaseResource
 {
-    private readonly string _endpoint = "/pg/v4/payment/unVerified.json";
-
     /// <summary>
     /// Creates an instance of Unverified.
     /// </summary>
@@ -28,7 +27,7 @@ public class Unverified : BaseResource
     public async Task<UnverifiedResult> ListAsync(CancellationToken cancellationToken = default)
     {
         // Make the API request
-        var result = await Client.RequestAsync<UnverifiedResult>("POST", _endpoint, new { }, cancellationToken);
+        var result = await Client.RequestAsync<UnverifiedResult>("POST", Endpoints.Unverified, new { }, cancellationToken);
         return result ?? new UnverifiedResult();
     }
 }

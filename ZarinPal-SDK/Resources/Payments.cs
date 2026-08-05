@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using ZarinPal.Constants;
 using ZarinPal.Validators;
 using ZarinPal.Models;
 using ZarinPal.Interfaces;
@@ -11,9 +12,6 @@ namespace ZarinPal.Resources;
 /// </summary>
 public class Payments : BaseResource
 {
-    private readonly string _endpoint = "/pg/v4/payment/request.json";
-    private readonly string _startPayUrl = "/pg/StartPay/";
-
     /// <summary>
     /// Creates an instance of Payments.
     /// </summary>
@@ -37,7 +35,7 @@ public class Payments : BaseResource
         Validator.ValidateEmail(data.Email);
 
         // Make the API request
-        var result = await Client.RequestAsync<PaymentResult>("POST", _endpoint, data, cancellationToken);
+        var result = await Client.RequestAsync<PaymentResult>("POST", Endpoints.PaymentRequest, data, cancellationToken);
         return result ?? new PaymentResult();
     }
 
@@ -56,7 +54,7 @@ public class Payments : BaseResource
         Validator.ValidateAmount(data.Amount);
         Validator.ValidateCurrency(data.Currency);
 
-        var result = await Client.RequestAsync<FeeCalculationResult>("POST", "/pg/v4/payment/feeCalculation.json", data, cancellationToken);
+        var result = await Client.RequestAsync<FeeCalculationResult>("POST", Endpoints.FeeCalculation, data, cancellationToken);
         return result ?? new FeeCalculationResult();
     }
 
@@ -68,6 +66,6 @@ public class Payments : BaseResource
     public string GetRedirectUrl(string authority)
     {
         var baseUrl = Client.GetBaseUrl();
-        return $"{baseUrl}{_startPayUrl}{authority}";
+        return $"{baseUrl}{Endpoints.StartPay}{authority}";
     }
 }

@@ -1,3 +1,6 @@
 <Solution>
   <Project Path="ZarinPal-SDK/ZarinPal-SDK.csproj" />
+  <Project Path="tests/ZarinPal.SDK.UnitTests/ZarinPal.SDK.UnitTests.csproj" />
+  <Project Path="tests/ZarinPal.SDK.IntegrationTests/ZarinPal.SDK.IntegrationTests.csproj" />
+  <Project Path="tests/ZarinPal.SDK.E2ETests/ZarinPal.SDK.E2ETests.csproj" />
 </Solution>
