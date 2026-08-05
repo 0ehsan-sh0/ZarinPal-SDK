@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using System.Text.Json;
 
 namespace ZarinPal.Interfaces;
