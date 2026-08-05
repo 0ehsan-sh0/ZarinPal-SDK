@@ -32,18 +32,18 @@ This SDK multi-targets **`.NET 8.0`** and **`.NET Standard 2.0`**, making it com
 
 To install the ZarinPal SDK :
 
-1-Easily add it via Nuget package manager gallery just Search :
+1- Easily add it via NuGet package manager gallery by searching:
 `Ehsan.ZarinPal.SDK`
 
-2-Run this command :
+2- Run this command:
 `dotnet add package Ehsan.ZarinPal.SDK`
 
-3-Or in the PMC :
+3- Or in PMC:
 `NuGet\Install-Package Ehsan.ZarinPal.SDK`
 
 ## Configuration
 
-To use the SDK, you need to configure it with your ZarinPal credentials:
+To use the SDK, you can configure it with Dependency Injection using `IHttpClientFactory`:
 
 ```csharp
 using ZarinPal.Extensions;
@@ -53,19 +53,22 @@ builder.Services.AddZarinPal(config =>
     config.MerchantId = builder.Configuration["ZarinPal:MerchantId"] ?? "00000000-0000-0000-0000-000000000000";
     config.AccessToken = builder.Configuration["ZarinPal:AccessToken"] ?? "";
     config.Sandbox = builder.Configuration.GetValue<bool>("ZarinPal:Sandbox", true);
+    config.UserAgent = "MyCustomApp/v1.0"; // Optional custom user-agent
+    config.Timeout = TimeSpan.FromSeconds(30); // Optional timeout
 });
 ```
 
-To use it in a class:
+To inject and use it in a controller or service:
 ```csharp
 using ZarinPal.Interfaces;
 
 public class PaymentController : ControllerBase
 {
-    private readonly IZarinPal zarinPal;
-    public PaymentController(IZarinPal zarinPalCons)
+    private readonly IZarinPal _zarinPal;
+    
+    public PaymentController(IZarinPal zarinPal)
     {
-        zarinPal = zarinPalCons;
+        _zarinPal = zarinPal;
     }
 }
 ```
@@ -75,10 +78,14 @@ public class PaymentController : ControllerBase
 - `MerchantId`: Your merchant ID provided by ZarinPal (UUID format)
 - `AccessToken`: Access token for authentication (used for GraphQL requests)
 - `Sandbox`: Whether to use the sandbox environment (default: false)
+- `UserAgent`: Custom HTTP User-Agent header (default: `"ZarinPalSdk/v1 (.NET)"`)
+- `Timeout`: Timeout for HTTP requests (default: 30 seconds)
 
 ## Usage
 
-All operations are available directly on the `zarinPal` instance. The table below maps each direct method to its equivalent resource-based method (still supported):
+All operations are available directly on the `zarinPal` instance and return **strongly-typed response models**. All asynchronous methods accept an optional `CancellationToken`.
+
+The table below maps each direct method to its equivalent resource-based method:
 
 | Direct method | Resource-based equivalent |
 |---|---|
@@ -103,7 +110,7 @@ using ZarinPal.Models;
 
 var paymentRequest = new PaymentRequest
 {
-    Amount = 1000, // Amount in Rials
+    Amount = 10000, // Amount in Rials
     CallbackUrl = "https://yoursite.com/callback",
     Description = "Payment description",
     Mobile = "09120000000", // Optional: Customer mobile number
@@ -112,52 +119,41 @@ var paymentRequest = new PaymentRequest
 
 try
 {
-    var response = await zarinPal.CreateAsync(paymentRequest);
+    PaymentResult result = await zarinPal.CreateAsync(paymentRequest);
     
-    // Extract the authority from the response
-    var authority = response.GetProperty("data").GetProperty("authority").GetString();
-    
-    // Redirect user to payment page
-    var paymentUrl = zarinPal.GetRedirectUrl(authority);
+    // Redirect user to payment gateway page
+    var paymentUrl = zarinPal.GetRedirectUrl(result.Authority);
 }
 catch (Exception ex)
 {
-    // Handle exception
     Console.WriteLine($"Error creating payment: {ex.Message}");
 }
 ```
 
-> Equivalent resource-based call (still supported): `zarinPal.Payments.CreateAsync(paymentRequest)`
-
 ### Verifying a Payment
 
-After a successful payment, verify the transaction:
+After a payment attempt, verify the transaction:
 
 ```csharp
 using ZarinPal.Models;
 
 var verificationRequest = new VerificationRequest
 {
-    Amount = 1000, // Amount in Rials (must match the payment amount)
-    Authority = "A00000000000000000000000000000000000" // Authority from payment response
+    Amount = 10000, // Amount in Rials (must match payment amount)
+    Authority = "A00000000000000000000000000000000000" // Authority from callback query
 };
 
 try
 {
-    var response = await zarinPal.VerifyAsync(verificationRequest);
+    VerifyResult result = await zarinPal.VerifyAsync(verificationRequest);
     
-    // Check if verification was successful
-    var status = response.GetProperty("data").GetProperty("code").GetInt32();
-    if (status == 100) // Success code
+    if (result.Code == 100 || result.Code == 101) // Success code
     {
-        Console.WriteLine("Payment verified successfully");
-        var refId = response.GetProperty("data").GetProperty("ref_id").GetString();
-        Console.WriteLine($"Ref ID: {refId}");
+        Console.WriteLine($"Payment verified successfully. Ref ID: {result.RefId}");
     }
 }
 catch (Exception ex)
 {
-    // Handle exception
     Console.WriteLine($"Error verifying payment: {ex.Message}");
 }
 ```
@@ -171,20 +167,16 @@ using ZarinPal.Models;
 
 var inquiryRequest = new InquiryRequest
 {
-    Authority = "A00000000000000000000000000000000000" // Authority from payment response
+    Authority = "A00000000000000000000000000000000000"
 };
 
 try
 {
-    var response = await zarinPal.InquireAsync(inquiryRequest);
-    
-    // Process the response
-    var status = response.GetProperty("data").GetProperty("code").GetInt32();
-    Console.WriteLine($"Transaction status: {status}");
+    InquiryResult result = await zarinPal.InquireAsync(inquiryRequest);
+    Console.WriteLine($"Transaction Code: {result.Code}, Status: {result.Status}, RefId: {result.RefId}");
 }
 catch (Exception ex)
 {
-    // Handle exception
     Console.WriteLine($"Error inquiring transaction: {ex.Message}");
 }
 ```
@@ -198,20 +190,16 @@ using ZarinPal.Models;
 
 var reversalRequest = new ReversalRequest
 {
-    Authority = "A00000000000000000000000000000000000" // Authority from payment response
+    Authority = "A00000000000000000000000000000000000"
 };
 
 try
 {
-    var response = await zarinPal.ReverseAsync(reversalRequest);
-    
-    // Process the response
-    var status = response.GetProperty("data").GetProperty("code").GetInt32();
-    Console.WriteLine($"Reversal status: {status}");
+    ReversalResult result = await zarinPal.ReverseAsync(reversalRequest);
+    Console.WriteLine($"Reversal Code: {result.Code}, Message: {result.Message}");
 }
 catch (Exception ex)
 {
-    // Handle exception
     Console.WriteLine($"Error reversing transaction: {ex.Message}");
 }
 ```
@@ -225,21 +213,21 @@ using ZarinPal.Models;
 
 var transactionListRequest = new TransactionListRequest
 {
-    TerminalId = "TERMINAL_ID", // Your terminal ID
-    Limit = 10, // Number of transactions to return
-    Offset = 0 // Offset for pagination
+    TerminalId = "TERMINAL_ID",
+    Limit = 10,
+    Offset = 0
 };
 
 try
 {
-    var response = await zarinPal.ListTransactionsAsync(transactionListRequest);
-    
-    // Process the response
-    Console.WriteLine(response.ToString());
+    List<TransactionItem> items = await zarinPal.ListTransactionsAsync(transactionListRequest);
+    foreach (var item in items)
+    {
+        Console.WriteLine($"ID: {item.Id}, Status: {item.Status}, Amount: {item.Amount}");
+    }
 }
 catch (Exception ex)
 {
-    // Handle exception
     Console.WriteLine($"Error listing transactions: {ex.Message}");
 }
 ```
@@ -251,14 +239,17 @@ To retrieve a list of unverified payments:
 ```csharp
 try
 {
-    var response = await zarinPal.ListUnverifiedAsync();
-    
-    // Process the response
-    Console.WriteLine(response.ToString());
+    UnverifiedResult result = await zarinPal.ListUnverifiedAsync();
+    if (result.Authorities != null)
+    {
+        foreach (var item in result.Authorities)
+        {
+            Console.WriteLine($"Authority: {item.Authority}, Amount: {item.Amount}");
+        }
+    }
 }
 catch (Exception ex)
 {
-    // Handle exception
     Console.WriteLine($"Error listing unverified payments: {ex.Message}");
 }
 ```
@@ -269,27 +260,24 @@ To create a refund request via GraphQL:
 
 ```csharp
 using ZarinPal.Models;
-using ZarinPal.Enums
+using ZarinPal.Enums;
 
 var refundRequest = new RefundCreateRequest
 {
-    SessionId = "SESSION_ID", // Session ID of the transaction to refund
-    Amount = 1000, // Amount to refund in Rials
-    Description = "Refund description", // Optional
-    Method = RefundMethod.PAYA, // Optional: Refund method that can be PAYA or CARD
-    Reason = "CUSTOMER_REQUEST" // Optional: Refund reason
+    SessionId = "SESSION_ID",
+    Amount = 1000,
+    Description = "Refund description",
+    Method = RefundMethod.PAYA,
+    Reason = "CUSTOMER_REQUEST"
 };
 
 try
 {
-    var response = await zarinPal.CreateRefundAsync(refundRequest);
-    
-    // Process the response
-    Console.WriteLine(response.ToString());
+    RefundCreateResult result = await zarinPal.CreateRefundAsync(refundRequest);
+    Console.WriteLine($"Refund created with ID: {result.Id}, Amount: {result.Amount}");
 }
 catch (Exception ex)
 {
-    // Handle exception
     Console.WriteLine($"Error creating refund: {ex.Message}");
 }
 ```
@@ -304,20 +292,17 @@ using ZarinPal.Models;
 var feeCalculationRequest = new FeeCalculationRequest
 {
     MerchantId = "YOUR_MERCHANT_ID", // Optional if configured globally
-    Amount = 1000, // Amount in Rials
-    Currency = "IRR" // Optional: Currency code
+    Amount = 10000, // Amount in Rials
+    Currency = "IRR"
 };
 
 try
 {
-    var response = await zarinPal.CalculateFeeAsync(feeCalculationRequest);
-    
-    // Process the response
-    Console.WriteLine(response.ToString());
+    FeeCalculationResult result = await zarinPal.CalculateFeeAsync(feeCalculationRequest);
+    Console.WriteLine($"Fee: {result.Fee}, FeeType: {result.FeeType}");
 }
 catch (Exception ex)
 {
-    // Handle exception
     Console.WriteLine($"Error calculating fee: {ex.Message}");
 }
 ```
@@ -326,34 +311,29 @@ catch (Exception ex)
 
 The SDK throws specific exceptions for different error scenarios:
 
-- `ValidationException`: Thrown when input validation fails
-- `ResponseException`: Thrown when HTTP or GraphQL responses contain errors
-- `ZarinPalApiException`: Thrown when ZarinPal API returns a non-success business error code (e.g., `data.code != 100` and `101`). Contains a `Code` property with the error code.
+- `ValidationException`: Thrown when input parameter validation fails.
+- `ResponseException`: Thrown when HTTP or GraphQL responses contain network errors or unparseable bodies.
+- `ZarinPalApiException`: Thrown when ZarinPal API returns a business error code (e.g., `code != 100` and `101`). Contains a `Code` property with the error code.
 
 ```csharp
 try
 {
-    // SDK operations (direct or resource-based calls both work)
-    var response = await zarinPal.CreateAsync(paymentRequest);
+    var result = await zarinPal.CreateAsync(paymentRequest);
 }
 catch (ZarinPal.Exceptions.ValidationException validationEx)
 {
-    // Handle validation errors
     Console.WriteLine($"Validation error: {validationEx.Message}");
 }
 catch (ZarinPal.Exceptions.ZarinPalApiException apiEx)
 {
-    // Handle ZarinPal business logic errors (e.g., invalid merchant, insufficient permissions)
     Console.WriteLine($"ZarinPal API error code {apiEx.Code}: {apiEx.Message}");
 }
 catch (ZarinPal.Exceptions.ResponseException responseEx)
 {
-    // Handle API HTTP response errors
     Console.WriteLine($"API error: {responseEx.Message}, Status Code: {responseEx.StatusCode}");
 }
 catch (Exception ex)
 {
-    // Handle other errors
     Console.WriteLine($"General error: {ex.Message}");
 }
 ```
@@ -373,4 +353,4 @@ var config = new Config
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.txt](../LICENSE.txt) file for details.
+This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
