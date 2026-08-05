@@ -2,24 +2,24 @@ name: Publish Multi-Target NuGet Package
 
 on:
   push:
-    branches:
-      - main        # or your main development branch
-  push:
     tags:
-      - 'v*'        # trigger on tags like v1.0.0
+      - 'v*'        # Trigger on tags like v1.1.0
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       # 1. Checkout code
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # 2. Setup .NET SDK
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x' # latest SDK for multi-target
 
@@ -40,15 +40,18 @@ jobs:
               /p:IncludeSymbols=true \
               /p:IncludeSource=true
 
-      # 6. Push package to NuGet.org
+      # 6. NuGet login via OIDC (Trusted Publishing)
+      - name: NuGet login
+        uses: NuGet/login@v1
+        with:
+          user: 0ehsan-sh0 # Replace with your actual NuGet.org username/org if it differs
+
+      # 7. Push package to NuGet.org
       - name: Push NuGet package
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
           for nupkg in ./artifacts/*.nupkg; do
             echo "Pushing $nupkg"
             dotnet nuget push "$nupkg" \
-              --api-key $NUGET_API_KEY \
               --source https://api.nuget.org/v3/index.json \
               --skip-duplicate
           done
