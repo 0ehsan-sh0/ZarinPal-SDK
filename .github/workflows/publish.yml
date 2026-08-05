@@ -34,12 +34,13 @@ jobs:
 
       # 5. Pack all target frameworks
       - name: Pack NuGet package
-        run: dotnet pack ./ZarinPal-SDK/ZarinPal-SDK.csproj \
-              --configuration Release \
-              --output ./artifacts \
-              --no-build \
-              /p:IncludeSymbols=true \
-              /p:IncludeSource=true
+        run: |
+          dotnet pack ./ZarinPal-SDK/ZarinPal-SDK.csproj \
+            --configuration Release \
+            --output ./artifacts \
+            --no-build \
+            -p:IncludeSymbols=true \
+            -p:IncludeSource=true
 
       # 6. NuGet login via OIDC (Trusted Publishing)
       - name: NuGet login
