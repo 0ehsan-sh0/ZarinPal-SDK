@@ -45,6 +45,7 @@ jobs:
       # 6. NuGet login via OIDC (Trusted Publishing)
       - name: NuGet login
         uses: NuGet/login@v1
+        id: nuget-login
         with:
           user: Exhsn
 
@@ -54,6 +55,7 @@ jobs:
           for nupkg in ./artifacts/*.nupkg; do
             echo "Pushing $nupkg"
             dotnet nuget push "$nupkg" \
+              --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
               --source https://api.nuget.org/v3/index.json \
               --skip-duplicate
           done
