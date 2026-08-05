@@ -295,7 +295,7 @@ using ZarinPal.Models;
 
 var feeCalculationRequest = new FeeCalculationRequest
 {
-    MerchantId = "YOUR_MERCHANT_ID", // Your merchant ID
+    MerchantId = "YOUR_MERCHANT_ID", // Optional if configured globally
     Amount = 1000, // Amount in Rials
     Currency = "IRR" // Optional: Currency code
 };
@@ -319,7 +319,8 @@ catch (Exception ex)
 The SDK throws specific exceptions for different error scenarios:
 
 - `ValidationException`: Thrown when input validation fails
-- `ResponseException`: Thrown when API responses contain errors
+- `ResponseException`: Thrown when HTTP or GraphQL responses contain errors
+- `ZarinPalApiException`: Thrown when ZarinPal API returns a non-success business error code (e.g., `data.code != 100` and `101`). Contains a `Code` property with the error code.
 
 ```csharp
 try
@@ -332,9 +333,14 @@ catch (ZarinPal.Exceptions.ValidationException validationEx)
     // Handle validation errors
     Console.WriteLine($"Validation error: {validationEx.Message}");
 }
+catch (ZarinPal.Exceptions.ZarinPalApiException apiEx)
+{
+    // Handle ZarinPal business logic errors (e.g., invalid merchant, insufficient permissions)
+    Console.WriteLine($"ZarinPal API error code {apiEx.Code}: {apiEx.Message}");
+}
 catch (ZarinPal.Exceptions.ResponseException responseEx)
 {
-    // Handle API response errors
+    // Handle API HTTP response errors
     Console.WriteLine($"API error: {responseEx.Message}, Status Code: {responseEx.StatusCode}");
 }
 catch (Exception ex)

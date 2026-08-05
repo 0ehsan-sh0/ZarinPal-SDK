@@ -46,7 +46,10 @@ public class Payments : BaseResource
     /// <returns>The response from the API.</returns>
     public async Task<JsonElement> FeeCalculationAsync(FeeCalculationRequest data)
     {
-        Validator.ValidateMerchantId(data.MerchantId);
+        if (!string.IsNullOrEmpty(data.MerchantId))
+        {
+            Validator.ValidateMerchantId(data.MerchantId);
+        }
         Validator.ValidateAmount(data.Amount);
         Validator.ValidateCurrency(data.Currency);
 

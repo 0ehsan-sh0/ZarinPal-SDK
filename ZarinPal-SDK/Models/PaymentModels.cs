@@ -26,7 +26,7 @@ public class PaymentRequest
 public class FeeCalculationRequest
 {
     [JsonPropertyName("merchant_id")]
-    public string MerchantId { get; set; } = string.Empty;
+    public string? MerchantId { get; set; }
 
     [JsonPropertyName("amount")]
     public decimal Amount { get; set; }

@@ -51,9 +51,13 @@ public class ZarinPal : IZarinPal,IZarinPalClient
         HttpClient.DefaultRequestHeaders.UserAgent.ParseAdd("ZarinPalSdk/v1 (.NET)");
         HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
+        var graphqlBaseUrl = Config.Sandbox
+            ? "https://sandbox.zarinpal.com/api/v4/graphql/"
+            : "https://next.zarinpal.com/api/v4/graphql/";
+
         GraphqlClient = new HttpClient()
         {
-            BaseAddress = new Uri("https://next.zarinpal.com/api/v4/graphql/")
+            BaseAddress = new Uri(graphqlBaseUrl)
         };
         GraphqlClient.DefaultRequestHeaders.UserAgent.ParseAdd("ZarinPalSdk/v1 (.NET)");
         GraphqlClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -91,7 +95,18 @@ public class ZarinPal : IZarinPal,IZarinPalClient
             {
                 foreach (var item in dataDict)
                 {
-                    jsonData[item.Key] = item.Value;
+                    if (item.Key == "merchant_id")
+                    {
+                        var valStr = item.Value?.ToString();
+                        if (!string.IsNullOrEmpty(valStr))
+                        {
+                            jsonData["merchant_id"] = valStr;
+                        }
+                    }
+                    else
+                    {
+                        jsonData[item.Key] = item.Value;
+                    }
                 }
             }
         }
@@ -107,12 +122,7 @@ public class ZarinPal : IZarinPal,IZarinPalClient
         var response = await HttpClient.SendAsync(request);
         var responseContent = await response.Content.ReadAsStringAsync();
 
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new ResponseException($"API request failed with status code {response.StatusCode}: {responseContent}", response.StatusCode);
-        }
-
-        return JsonSerializer.Deserialize<JsonElement>(responseContent);
+        return ParseAndValidateResponse(responseContent, response.StatusCode, isGraphql: false);
     }
 
     /// <summary>
@@ -127,12 +137,158 @@ public class ZarinPal : IZarinPal,IZarinPalClient
         var response = await GraphqlClient.PostAsync("", content);
         var responseContent = await response.Content.ReadAsStringAsync();
 
-        if (!response.IsSuccessStatusCode)
+        return ParseAndValidateResponse(responseContent, response.StatusCode, isGraphql: true);
+    }
+
+    private static JsonElement ParseAndValidateResponse(string responseContent, HttpStatusCode statusCode, bool isGraphql)
+    {
+        if (string.IsNullOrWhiteSpace(responseContent))
         {
-            throw new ResponseException($"GraphQL request failed with status code {response.StatusCode}: {responseContent}", response.StatusCode);
+            throw new ResponseException("API response body was empty.", statusCode);
         }
 
-        return JsonSerializer.Deserialize<JsonElement>(responseContent);
+        JsonDocument doc;
+        try
+        {
+            doc = JsonDocument.Parse(responseContent);
+        }
+        catch (JsonException ex)
+        {
+            throw new ResponseException($"Failed to parse API response JSON: {ex.Message}", statusCode);
+        }
+
+        var root = doc.RootElement;
+
+        if ((int)statusCode < 200 || (int)statusCode >= 300)
+        {
+            var errorMsg = ExtractErrorMessage(root) ?? $"API request failed with status code {statusCode}: {responseContent}";
+            throw new ResponseException(errorMsg, statusCode);
+        }
+
+        if (isGraphql)
+        {
+            if (root.TryGetProperty("errors", out var errorsProp) &&
+                errorsProp.ValueKind != JsonValueKind.Null &&
+                errorsProp.ValueKind != JsonValueKind.Undefined)
+            {
+                if (errorsProp.ValueKind == JsonValueKind.Array && errorsProp.GetArrayLength() > 0)
+                {
+                    var errorMessages = new List<string>();
+                    foreach (var err in errorsProp.EnumerateArray())
+                    {
+                        if (err.ValueKind == JsonValueKind.Object && err.TryGetProperty("message", out var msgProp) && msgProp.ValueKind == JsonValueKind.String)
+                        {
+                            var msg = msgProp.GetString();
+                            if (!string.IsNullOrEmpty(msg))
+                            {
+                                errorMessages.Add(msg);
+                            }
+                        }
+                        else
+                        {
+                            errorMessages.Add(err.ToString());
+                        }
+                    }
+                    var combinedMsg = errorMessages.Count > 0 ? string.Join("; ", errorMessages) : errorsProp.ToString();
+                    throw new ResponseException($"GraphQL error: {combinedMsg}", statusCode);
+                }
+                else if (errorsProp.ValueKind == JsonValueKind.Object)
+                {
+                    var msg = errorsProp.TryGetProperty("message", out var msgProp) ? msgProp.GetString() : errorsProp.ToString();
+                    throw new ResponseException($"GraphQL error: {msg}", statusCode);
+                }
+            }
+        }
+        else
+        {
+            if (root.TryGetProperty("errors", out var errorsProp) &&
+                errorsProp.ValueKind != JsonValueKind.Null &&
+                errorsProp.ValueKind != JsonValueKind.Undefined)
+            {
+                if (errorsProp.ValueKind == JsonValueKind.Array && errorsProp.GetArrayLength() > 0)
+                {
+                    var firstErr = errorsProp[0];
+                    int code = -1;
+                    string message = "REST API Error";
+                    if (firstErr.ValueKind == JsonValueKind.Object)
+                    {
+                        if (firstErr.TryGetProperty("code", out var cProp) && cProp.ValueKind == JsonValueKind.Number)
+                        {
+                            code = cProp.GetInt32();
+                        }
+                        if (firstErr.TryGetProperty("message", out var mProp) && mProp.ValueKind == JsonValueKind.String)
+                        {
+                            message = mProp.GetString() ?? message;
+                        }
+                    }
+                    else if (firstErr.ValueKind == JsonValueKind.String)
+                    {
+                        message = firstErr.GetString() ?? message;
+                    }
+                    throw new ZarinPalApiException(code, message, statusCode);
+                }
+                else if (errorsProp.ValueKind == JsonValueKind.Object)
+                {
+                    int code = -1;
+                    string message = "REST API Error";
+                    if (errorsProp.TryGetProperty("code", out var cProp) && cProp.ValueKind == JsonValueKind.Number)
+                    {
+                        code = cProp.GetInt32();
+                    }
+                    if (errorsProp.TryGetProperty("message", out var mProp) && mProp.ValueKind == JsonValueKind.String)
+                    {
+                        message = mProp.GetString() ?? message;
+                    }
+                    throw new ZarinPalApiException(code, message, statusCode);
+                }
+            }
+
+            if (root.TryGetProperty("data", out var dataProp) && dataProp.ValueKind == JsonValueKind.Object)
+            {
+                if (dataProp.TryGetProperty("code", out var codeProp) && codeProp.ValueKind == JsonValueKind.Number)
+                {
+                    int code = codeProp.GetInt32();
+                    if (code != 100 && code != 101)
+                    {
+                        string message = dataProp.TryGetProperty("message", out var msgProp) && msgProp.ValueKind == JsonValueKind.String
+                            ? msgProp.GetString() ?? $"API returned error code {code}."
+                            : $"API returned error code {code}.";
+                        throw new ZarinPalApiException(code, message, statusCode);
+                    }
+                }
+            }
+        }
+
+        return root.Clone();
+    }
+
+    private static string? ExtractErrorMessage(JsonElement root)
+    {
+        if (root.ValueKind == JsonValueKind.Object)
+        {
+            if (root.TryGetProperty("errors", out var errorsProp))
+            {
+                if (errorsProp.ValueKind == JsonValueKind.Array && errorsProp.GetArrayLength() > 0)
+                {
+                    var first = errorsProp[0];
+                    if (first.ValueKind == JsonValueKind.Object && first.TryGetProperty("message", out var m))
+                        return m.GetString();
+                    return first.ToString();
+                }
+                if (errorsProp.ValueKind == JsonValueKind.Object && errorsProp.TryGetProperty("message", out var msg))
+                {
+                    return msg.GetString();
+                }
+            }
+            if (root.TryGetProperty("data", out var dataProp) && dataProp.ValueKind == JsonValueKind.Object)
+            {
+                if (dataProp.TryGetProperty("message", out var msg))
+                {
+                    return msg.GetString();
+                }
+            }
+        }
+        return null;
     }
 
     public string GetBaseUrl() => BaseUrl;

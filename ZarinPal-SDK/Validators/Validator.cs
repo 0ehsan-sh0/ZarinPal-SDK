@@ -48,9 +48,9 @@ public static class Validator
 
     public static void ValidateCallbackUrl(string callbackUrl)
     {
-        if (string.IsNullOrEmpty(callbackUrl) || !Regex.IsMatch(callbackUrl, @"^https?://.*$"))
+        if (string.IsNullOrEmpty(callbackUrl) || !Regex.IsMatch(callbackUrl, @"^https?://[a-zA-Z0-9.-]+(?::[0-9]+)?(?:/.*)?$"))
         {
-            throw new ValidationException("Invalid callback URL format. It should start with http:// or https://.");
+            throw new ValidationException("Invalid callback URL format. It should start with http:// or https:// and include a valid host.");
         }
     }
 
