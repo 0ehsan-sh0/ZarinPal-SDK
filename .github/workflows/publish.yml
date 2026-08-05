@@ -22,6 +22,7 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x' # latest SDK for multi-target
+          dotnet-quality: 'preview'
 
       # 3. Restore dependencies
       - name: Restore dependencies
