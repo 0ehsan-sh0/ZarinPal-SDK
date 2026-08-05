@@ -5,6 +5,7 @@ A comprehensive .NET SDK for integrating with ZarinPal payment gateway services.
 > **Note:** All operations can be called directly on the `zarinPal` instance (e.g. `await zarinPal.CreateAsync(...)`). The resource-based methods (e.g. `await zarinPal.Payments.CreateAsync(...)`) **still work and are fully supported** for backward compatibility.
 
 ## Table of Contents
+- [Target Frameworks](#target-frameworks)
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Usage](#usage)
@@ -19,6 +20,13 @@ A comprehensive .NET SDK for integrating with ZarinPal payment gateway services.
 - [Error Handling](#error-handling)
 - [Sandbox Environment](#sandbox-environment)
 - [License](#license)
+
+## Target Frameworks
+
+This SDK multi-targets **`.NET 8.0`** and **`.NET Standard 2.0`**, making it compatible with:
+- **.NET 8.0+** (.NET 8, .NET 9, etc.)
+- **.NET Core 2.0+** / **.NET 5, 6, 7**
+- **.NET Framework 4.6.1+**
 
 ## Installation
 

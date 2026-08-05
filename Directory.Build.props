@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Package Metadata -->
+    <Authors>Ehsan</Authors>
+    <Description>A lightweight .NET SDK for ZarinPal payment gateway.</Description>
+    <PackageProjectUrl>https://github.com/0ehsan-sh0/ZarinPal-SDK</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/0ehsan-sh0/ZarinPal-SDK</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+</Project>

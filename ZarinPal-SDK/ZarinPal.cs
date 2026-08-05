@@ -181,7 +181,7 @@ public class ZarinPal : IZarinPal,IZarinPalClient
                             var msg = msgProp.GetString();
                             if (!string.IsNullOrEmpty(msg))
                             {
-                                errorMessages.Add(msg);
+                                errorMessages.Add(msg!);
                             }
                         }
                         else
