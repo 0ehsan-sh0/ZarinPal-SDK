@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using ZarinPal.Constants;
+using ZarinPal.Exceptions;
 using ZarinPal.Interfaces;
 using ZarinPal.Models;
 
@@ -28,6 +29,6 @@ public class Unverified : BaseResource
     {
         // Make the API request
         var result = await Client.RequestAsync<UnverifiedResult>("POST", Endpoints.Unverified, new { }, cancellationToken);
-        return result ?? new UnverifiedResult();
+        return result ?? throw new ResponseException("API returned an empty unverified payments response.");
     }
 }

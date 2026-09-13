@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using ZarinPal.Exceptions;
 using ZarinPal.Validators;
 using ZarinPal.Models;
 using ZarinPal.Interfaces;
@@ -78,7 +79,7 @@ public class Refunds : BaseResource
         };
 
         var result = await Client.GraphqlAsync<RefundCreateResult>(query, variables, dataPath: "resource", cancellationToken: cancellationToken);
-        return result ?? new RefundCreateResult();
+        return result ?? throw new ResponseException("API returned an empty refund creation response.");
     }
 
     /// <summary>
@@ -107,7 +108,7 @@ public class Refunds : BaseResource
         };
 
         var result = await Client.GraphqlAsync<RefundItem>(query, variables, dataPath: "refund", cancellationToken: cancellationToken);
-        return result ?? new RefundItem();
+        return result ?? throw new ResponseException("API returned an empty refund response.");
     }
 
     /// <summary>
@@ -153,6 +154,6 @@ public class Refunds : BaseResource
         };
 
         var result = await Client.GraphqlAsync<List<RefundItem>>(query, variables, dataPath: "refunds", cancellationToken: cancellationToken);
-        return result ?? new List<RefundItem>();
+        return result ?? throw new ResponseException("API returned an empty refunds response.");
     }
 }

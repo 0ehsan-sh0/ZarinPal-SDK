@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using ZarinPal.Constants;
+using ZarinPal.Exceptions;
 using ZarinPal.Validators;
 using ZarinPal.Models;
 using ZarinPal.Interfaces;
@@ -34,6 +35,6 @@ public class Verifications : BaseResource
 
         // Make the API request
         var result = await Client.RequestAsync<VerifyResult>("POST", Endpoints.Verify, data, cancellationToken);
-        return result ?? new VerifyResult();
+        return result ?? throw new ResponseException("API returned an empty verification response.");
     }
 }

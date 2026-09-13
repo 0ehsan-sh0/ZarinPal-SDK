@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using ZarinPal.Exceptions;
 using ZarinPal.Validators;
 using ZarinPal.Models;
 using ZarinPal.Interfaces;
@@ -69,6 +70,6 @@ public class Transactions : BaseResource
         };
 
         var result = await Client.GraphqlAsync<List<TransactionItem>>(query, variables, dataPath: "transactions", cancellationToken: cancellationToken);
-        return result ?? new List<TransactionItem>();
+        return result ?? throw new ResponseException("API returned an empty transactions response.");
     }
 }

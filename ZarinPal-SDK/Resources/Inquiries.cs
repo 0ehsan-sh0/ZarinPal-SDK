@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using ZarinPal.Constants;
+using ZarinPal.Exceptions;
 using ZarinPal.Validators;
 using ZarinPal.Models;
 using ZarinPal.Interfaces;
@@ -33,6 +34,6 @@ public class Inquiries : BaseResource
 
         // Make the API request
         var result = await Client.RequestAsync<InquiryResult>("POST", Endpoints.Inquiry, data, cancellationToken);
-        return result ?? new InquiryResult();
+        return result ?? throw new ResponseException("API returned an empty inquiry response.");
     }
 }

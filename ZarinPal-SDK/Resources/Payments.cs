@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using ZarinPal.Constants;
+using ZarinPal.Exceptions;
 using ZarinPal.Validators;
 using ZarinPal.Models;
 using ZarinPal.Interfaces;
@@ -36,7 +37,7 @@ public class Payments : BaseResource
 
         // Make the API request
         var result = await Client.RequestAsync<PaymentResult>("POST", Endpoints.PaymentRequest, data, cancellationToken);
-        return result ?? new PaymentResult();
+        return result ?? throw new ResponseException("API returned an empty payment response.");
     }
 
     /// <summary>
@@ -55,7 +56,7 @@ public class Payments : BaseResource
         Validator.ValidateCurrency(data.Currency);
 
         var result = await Client.RequestAsync<FeeCalculationResult>("POST", Endpoints.FeeCalculation, data, cancellationToken);
-        return result ?? new FeeCalculationResult();
+        return result ?? throw new ResponseException("API returned an empty fee calculation response.");
     }
 
     /// <summary>

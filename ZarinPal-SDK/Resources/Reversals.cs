@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using ZarinPal.Constants;
+using ZarinPal.Exceptions;
 using ZarinPal.Validators;
 using ZarinPal.Models;
 using ZarinPal.Interfaces;
@@ -33,6 +34,6 @@ public class Reversals : BaseResource
 
         // Make the API request
         var result = await Client.RequestAsync<ReversalResult>("POST", Endpoints.Reverse, data, cancellationToken);
-        return result ?? new ReversalResult();
+        return result ?? throw new ResponseException("API returned an empty reversal response.");
     }
 }
