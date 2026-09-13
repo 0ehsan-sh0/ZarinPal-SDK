@@ -312,7 +312,7 @@ catch (Exception ex)
 The SDK throws specific exceptions for different error scenarios:
 
 - `ValidationException`: Thrown when input parameter validation fails.
-- `ResponseException`: Thrown when HTTP or GraphQL responses contain network errors or unparseable bodies.
+- `ResponseException`: Thrown when HTTP or GraphQL responses contain network errors, unparseable bodies, or empty response payloads (resource methods throw instead of returning empty objects).
 - `ZarinPalApiException`: Thrown when ZarinPal API returns a business error code (e.g., `code != 100` and `101`). Contains a `Code` property with the error code.
 
 ```csharp
