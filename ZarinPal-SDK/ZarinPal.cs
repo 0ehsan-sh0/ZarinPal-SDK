@@ -288,7 +288,9 @@ public class ZarinPal : IZarinPal, IZarinPalClient
             throw new ResponseException($"Failed to parse API response JSON: {ex.Message}", statusCode);
         }
 
-        var root = doc.RootElement;
+        using (doc)
+        {
+            var root = doc.RootElement;
 
         if ((int)statusCode < 200 || (int)statusCode >= 300)
         {
@@ -390,7 +392,8 @@ public class ZarinPal : IZarinPal, IZarinPalClient
             }
         }
 
-        return root.Clone();
+            return root.Clone();
+        }
     }
 
     private static string? ExtractErrorMessage(JsonElement root)
