@@ -16,7 +16,7 @@ public static partial class Validator
     [GeneratedRegex(@"^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$", RegexOptions.IgnoreCase)]
     private static partial Regex MerchantIdRegex();
 
-    [GeneratedRegex(@"^[AS][0-9a-zA-Z]{35}$")]
+    [GeneratedRegex(@"^[AS][0-9A-Za-z]{35}$")]
     private static partial Regex AuthorityRegex();
 
     [GeneratedRegex(@"^https?://[a-zA-Z0-9.-]+(?::[0-9]+)?(?:/.*)?$")]
@@ -29,7 +29,7 @@ public static partial class Validator
     private static partial Regex EmailRegex();
 #else
     private static readonly Regex MerchantIdRegexInstance = new(@"^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    private static readonly Regex AuthorityRegexInstance = new(@"^[AS][0-9a-zA-Z]{35}$", RegexOptions.Compiled);
+    private static readonly Regex AuthorityRegexInstance = new(@"^[AS][0-9A-Za-z]{35}$", RegexOptions.Compiled);
     private static readonly Regex CallbackUrlRegexInstance = new(@"^https?://[a-zA-Z0-9.-]+(?::[0-9]+)?(?:/.*)?$", RegexOptions.Compiled);
     private static readonly Regex MobileRegexInstance = new(@"^09[0-9]{9}$", RegexOptions.Compiled);
     private static readonly Regex EmailRegexInstance = new(@"^[^\s@]+@[^\s@]+\.[^\s@]+$", RegexOptions.Compiled);
