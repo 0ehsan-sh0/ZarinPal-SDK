@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,6 +30,8 @@ public class Transactions : BaseResource
     /// <returns>A list of transaction items.</returns>
     public async Task<List<TransactionItem>> ListAsync(TransactionListRequest data, CancellationToken cancellationToken = default)
     {
+        if (data == null) throw new ArgumentNullException(nameof(data));
+
         // Validate input data
         Validator.ValidateTerminalId(data.TerminalId);
         if (!string.IsNullOrEmpty(data.Filter))

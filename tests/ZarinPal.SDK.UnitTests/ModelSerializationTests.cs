@@ -190,4 +190,47 @@ public class ModelSerializationTests
         result.Description.Should().Be("Order payment");
         result.CreatedAt.Should().Be("2026-08-05T10:00:00Z");
     }
+
+    [Theory]
+    [InlineData(RefundMethod.PAYA, "PAYA")]
+    [InlineData(RefundMethod.CARD, "CARD")]
+    public void RefundMethod_SerializesAsString(RefundMethod method, string expectedString)
+    {
+        var json = JsonSerializer.Serialize(method);
+        json.Should().Be($"\"{expectedString}\"");
+    }
+
+    [Fact]
+    public void RefundCreateRequest_Serialization_IncludesStringMethod()
+    {
+        var request = new RefundCreateRequest
+        {
+            SessionId = "sess_123",
+            Amount = 10000,
+            Method = RefundMethod.CARD,
+            Reason = "CUSTOMER_REQUEST",
+            Description = "Refund test"
+        };
+
+        var json = JsonSerializer.Serialize(request);
+
+        json.Should().Contain("\"method\":\"CARD\"");
+        json.Should().NotContain("\"method\":1");
+    }
+
+    [Fact]
+    public void RefundCreateRequest_Deserialization_ParsesStringMethod()
+    {
+        var json = @"{
+            ""sessionId"": ""sess_123"",
+            ""amount"": 10000,
+            ""method"": ""PAYA"",
+            ""reason"": ""CUSTOMER_REQUEST""
+        }";
+
+        var result = JsonSerializer.Deserialize<RefundCreateRequest>(json);
+
+        result.Should().NotBeNull();
+        result!.Method.Should().Be(RefundMethod.PAYA);
+    }
 }

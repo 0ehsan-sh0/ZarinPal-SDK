@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ZarinPal.Constants;
@@ -29,6 +30,8 @@ public class Payments : BaseResource
     /// <returns>The response from the API containing payment authority.</returns>
     public async Task<PaymentResult> CreateAsync(PaymentRequest data, CancellationToken cancellationToken = default)
     {
+        if (data == null) throw new ArgumentNullException(nameof(data));
+
         // Validate input data
         Validator.ValidateAmount(data.Amount);
         Validator.ValidateCallbackUrl(data.CallbackUrl);
@@ -48,6 +51,8 @@ public class Payments : BaseResource
     /// <returns>The fee calculation response from the API.</returns>
     public async Task<FeeCalculationResult> FeeCalculationAsync(FeeCalculationRequest data, CancellationToken cancellationToken = default)
     {
+        if (data == null) throw new ArgumentNullException(nameof(data));
+
         if (!string.IsNullOrEmpty(data.MerchantId))
         {
             Validator.ValidateMerchantId(data.MerchantId);
@@ -66,6 +71,7 @@ public class Payments : BaseResource
     /// <returns>The full redirect URL.</returns>
     public string GetRedirectUrl(string authority)
     {
+        Validator.ValidateAuthority(authority);
         var baseUrl = Client.GetBaseUrl();
         return $"{baseUrl}{Endpoints.StartPay}{authority}";
     }

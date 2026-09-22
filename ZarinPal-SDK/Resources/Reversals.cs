@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ZarinPal.Constants;
@@ -29,6 +30,8 @@ public class Reversals : BaseResource
     /// <returns>The response from the API.</returns>
     public async Task<ReversalResult> ReverseAsync(ReversalRequest data, CancellationToken cancellationToken = default)
     {
+        if (data == null) throw new ArgumentNullException(nameof(data));
+
         // Validate input data
         Validator.ValidateAuthority(data.Authority);
 

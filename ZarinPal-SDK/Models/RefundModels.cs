@@ -30,6 +30,7 @@ public class RefundCreateRequest
     /// Refund payout method.
     /// </summary>
     [JsonPropertyName("method")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public RefundMethod? Method { get; set; }
 
     /// <summary>

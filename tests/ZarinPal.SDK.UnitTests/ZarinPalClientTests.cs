@@ -1,8 +1,10 @@
 using System;
 using System.Net.Http;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
+using ZarinPal.Exceptions;
 using ZarinPal.Models;
 
 namespace ZarinPal.SDK.UnitTests;
@@ -84,5 +86,66 @@ public class ZarinPalClientTests
         var url = zarinpal.GetRedirectUrl(authority);
 
         url.Should().Be($"https://sandbox.zarinpal.com/pg/StartPay/{authority}");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("invalid-authority")]
+    public void GetRedirectUrl_InvalidAuthority_ThrowsValidationException(string? invalidAuthority)
+    {
+        var config = new Config { MerchantId = "c1234567-89ab-cdef-0123-456789abcdef", Sandbox = true };
+        using var zarinpal = new ZarinPal(config);
+
+        var act = () => zarinpal.GetRedirectUrl(invalidAuthority!);
+        act.Should().Throw<ValidationException>();
+    }
+
+    [Fact]
+    public async Task ResourceMethods_NullArguments_ThrowArgumentNullException()
+    {
+        var config = new Config { MerchantId = "c1234567-89ab-cdef-0123-456789abcdef", Sandbox = true };
+        using var zarinpal = new ZarinPal(config);
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() => zarinpal.CreateAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => zarinpal.CalculateFeeAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => zarinpal.VerifyAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => zarinpal.InquireAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => zarinpal.ReverseAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => zarinpal.ListTransactionsAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => zarinpal.CreateRefundAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => zarinpal.ListRefundsAsync(null!));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task RetrieveRefundAsync_NullOrEmptyId_ThrowsValidationException(string? refundId)
+    {
+        var config = new Config { MerchantId = "c1234567-89ab-cdef-0123-456789abcdef", Sandbox = true };
+        using var zarinpal = new ZarinPal(config);
+
+        var act = () => zarinpal.RetrieveRefundAsync(refundId!);
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("*Refund ID is required*");
+    }
+
+    [Fact]
+    public async Task CreateRefundAsync_NullMethod_ThrowsValidationException()
+    {
+        var config = new Config { MerchantId = "c1234567-89ab-cdef-0123-456789abcdef", Sandbox = true };
+        using var zarinpal = new ZarinPal(config);
+
+        var request = new RefundCreateRequest
+        {
+            SessionId = "sess_001",
+            Amount = 5000,
+            Method = null
+        };
+
+        var act = () => zarinpal.CreateRefundAsync(request);
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("*Method is required*");
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,13 +31,12 @@ public class Refunds : BaseResource
     /// <returns>The response from the GraphQL API.</returns>
     public async Task<RefundCreateResult> CreateAsync(RefundCreateRequest data, CancellationToken cancellationToken = default)
     {
+        if (data == null) throw new ArgumentNullException(nameof(data));
+
         // Validate input data
         Validator.ValidateSessionId(data.SessionId);
         Validator.ValidateAmount(data.Amount);
-        if (data.Method.HasValue)
-        {
-            Validator.ValidateMethod(data.Method);
-        }
+        Validator.ValidateMethod(data.Method);
         if (!string.IsNullOrEmpty(data.Reason))
         {
             Validator.ValidateReason(data.Reason!);
@@ -90,6 +90,11 @@ public class Refunds : BaseResource
     /// <returns>The response containing refund details.</returns>
     public async Task<RefundItem> RetrieveAsync(string refundId, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(refundId))
+        {
+            throw new ValidationException("Refund ID is required.");
+        }
+
         const string query = @"
           query GetRefund($id: ID!) {
             refund: GetRefund(id: $id) {
@@ -119,6 +124,8 @@ public class Refunds : BaseResource
     /// <returns>The response containing a list of refunds.</returns>
     public async Task<List<RefundItem>> ListAsync(RefundListRequest data, CancellationToken cancellationToken = default)
     {
+        if (data == null) throw new ArgumentNullException(nameof(data));
+
         // Validate input data
         Validator.ValidateTerminalId(data.TerminalId);
         if (data.Limit.HasValue)

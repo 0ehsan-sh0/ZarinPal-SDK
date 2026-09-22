@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ZarinPal.Constants;
@@ -29,6 +30,8 @@ public class Verifications : BaseResource
     /// <returns>The verification result.</returns>
     public async Task<VerifyResult> VerifyAsync(VerificationRequest data, CancellationToken cancellationToken = default)
     {
+        if (data == null) throw new ArgumentNullException(nameof(data));
+
         // Validate input data
         Validator.ValidateAmount(data.Amount);
         Validator.ValidateAuthority(data.Authority);

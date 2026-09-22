@@ -1,11 +1,10 @@
 # ZarinPal-SDK — Refactor & Improvement Report
 
 **Date:** 2026-09-13
-**Updated:** 2026-09-13 — Bugs §2.1–§2.3 fixed, verified (`dotnet build` 0 warnings, 118/118 tests pass)
+**Updated:** 2026-09-22 — Bugs §2.1–§2.5 fixed, verified (`dotnet build` 0 warnings, 130/130 tests pass, release v2.0.2)
 **Scope:** `ZarinPal-SDK/` library, `tests/`, build/packaging, CI
-**Sources:** `ZarinPal.cs`, `Config.cs`, `Resources/*`, `Validators/Validator.cs`, `Models/*`, `Interfaces/*`, `Extensions/ZarinPalServiceCollectionExtensions.cs`, `Constants/Endpoints.cs`, `Enums/RefundMethod.cs`, `Exceptions/*`, `ZarinPal-SDK.csproj`, `Directory.Build.props`, `global.json`, `.gitignore`, `docs/plans/improvement-plan.md` (untracked)
-
-> Status: §2.1–§2.3 implemented. Remainder is findings only.
+**Sources:** `ZarinPal.cs`, `Config.cs`, `Resources/*`, `Validators/Validator.cs`, `Models/*`, `Interfaces/*`, `Extensions/ZarinPalServiceCollectionExtensions.cs`, `Constants/Endpoints.cs`, `Enums/RefundMethod.cs`, `Exceptions/*`, `ZarinPal-SDK.csproj`, `Directory.Build.props`, `global.json`, `.gitignore`, `docs/plans/improvement-plan.md`
+> Status: §2.1–§2.5 implemented. Remaining P0 items: §2.6, §2.7.
 
 ---
 
@@ -13,7 +12,7 @@
 
 The SDK is functional and well-structured (resource split, typed results, xUnit coverage for happy paths), and `docs/plans/improvement-plan.md` Phases 0-4 are largely done. Remaining work is correctness edge cases, architecture hardening, packaging fixes, and test realism — not a rewrite.
 
-**Counts:** 7 correctness bugs (P0), 8 architecture/design smells (P1), 5 packaging/build issues (P1), 4 testing/CI gaps (P1), 6 missing features (P2).
+**Counts:** 2 correctness bugs remaining (P0), 8 architecture/design smells (P1), 5 packaging/build issues (P1), 4 testing/CI gaps (P1), 6 missing features (P2).
 
 **Recommended order:**
 1. P0 correctness (regex, dispose, enum serialization, null-guards)
@@ -60,24 +59,26 @@ Masks deserialization returning null (empty `data`, wrong `dataPath`).
 **Impact:** Callers got empty object instead of error; hard to debug.
 **Fix applied:** All 10 sites now `return result ?? throw new ResponseException("API returned an empty ... response.")`. Breaking for anyone relying on empty object — see ADR note in §8.2. README `ResponseException` description updated accordingly.
 
-### 2.4 `RefundMethod` serializes as int — `Models/RefundModels.cs:32-33`, `Resources/Refunds.cs:71-78`, `Enums/RefundMethod.cs:7-16`
-`System.Text.Json` defaults enums to numbers. GraphQL expects `InstantPayoutActionTypeEnum` (`PAYA`/`CARD` strings). Variables object has no `JsonStringEnumConverter`.
+### 2.4 `RefundMethod` serializes as int — `Models/RefundModels.cs:32-33`, `Resources/Refunds.cs:71-78`, `Enums/RefundMethod.cs:7-16` — ✅ FIXED
+`System.Text.Json` defaults enums to numbers. GraphQL expects `InstantPayoutActionTypeEnum` (`PAYA`/`CARD` strings).
 
-**Impact:** `AddRefund` with `Method` set sends `0/1` — server rejects or misroutes.
-**Fix:**
-```csharp
-[JsonConverter(typeof(JsonStringEnumConverter))]
-public RefundMethod? Method { get; set; }
-```
-or configure serializer options in `GraphqlAsync`. Also resolve contradiction: `Refunds.CreateAsync:36` treats `Method` as optional, `Validator.ValidateMethod:181` says required. Decide: optional → remove required check or make non-nullable.
+**Impact:** `AddRefund` with `Method` set sent `0/1` — server rejected or misrouted.
+**Fix applied:** 
+- Added `[JsonConverter(typeof(JsonStringEnumConverter))]` directly to `RefundMethod` enum and `RefundCreateRequest.Method`.
+- Enforced mandatory `Validator.ValidateMethod(data.Method)` in `Refunds.CreateAsync`.
+- Added unit tests for string serialization and deserialization.
 
-### 2.5 Missing null/empty guards
-- `Payments.CreateAsync(PaymentRequest data)` derefs `data` without `ArgumentNullException` — `Payments.cs:32`
+### 2.5 Missing null/empty guards — ✅ FIXED
+- `Payments.CreateAsync(PaymentRequest data)` derefs `data` without `ArgumentNullException`
 - Same for `FeeCalculationAsync`, `VerifyAsync`, `InquireAsync`, `ReverseAsync`, `ListAsync`
-- `Refunds.RetrieveAsync(string refundId)` no empty check — `Refunds.cs:90`
-- `Payments.GetRedirectUrl(string authority)` no validation — `Payments.cs:66-70`
+- `Refunds.RetrieveAsync(string refundId)` had no empty check
+- `Payments.GetRedirectUrl(string authority)` had no validation
 
-**Fix:** `ArgumentNullException.ThrowIfNull(data)` + `ValidateAuthority` in `GetRedirectUrl` + `ValidateSessionId`-style guard in `RetrieveAsync`. Low risk, high debuggability.
+**Fix applied:** 
+- Added `if (data == null) throw new ArgumentNullException(nameof(data));` across all resource methods (compatible with `net8.0` and `netstandard2.0`).
+- Added `Validator.ValidateAuthority(authority)` in `Payments.GetRedirectUrl`.
+- Added `if (string.IsNullOrWhiteSpace(refundId)) throw new ValidationException("Refund ID is required.");` in `Refunds.RetrieveAsync`.
+- Added unit test suite covering null guards and validations.
 
 ### 2.6 `RequestAsync` always sends body — `ZarinPal.cs:195-219`
 Even `GET` builds `StringContent("{}"+merchant_id)` and attaches to `HttpRequestMessage`. All current callers use POST so latent, but `IZarinPalClient` is public — future GET misuse.
