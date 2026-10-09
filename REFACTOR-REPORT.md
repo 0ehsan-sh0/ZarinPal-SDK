@@ -99,10 +99,6 @@ When callers instantiate `PaymentRequest` without explicitly setting `Metadata`,
 
 **Fix implemented in v2.0.3:** `PaymentRequest.Metadata` defaults to `Array.Empty<object>()` (`Models/PaymentModels.cs`), and `ZarinPal.RequestAsync` normalizes any serialized null `metadata` value to an empty array so an explicitly-set null can also never trigger -9. Covered by unit + integration tests.
 
-**Fix (P0 for v2.0.3):**
-1. Initialize `public object? Metadata { get; set; } = Array.Empty<object>();` in `Models/PaymentModels.cs`.
-2. In `Payments.CreateAsync`, if `Metadata` is empty but `Mobile`/`Email` are provided, auto-populate `Metadata` as `{"mobile": ..., "email": ...}`.
-
 ---
 
 
