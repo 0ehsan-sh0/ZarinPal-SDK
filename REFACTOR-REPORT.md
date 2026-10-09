@@ -4,7 +4,7 @@
 **Updated:** 2026-09-22 — Bugs §2.1–§2.5 fixed, verified (`dotnet build` 0 warnings, 130/130 tests pass, release v2.0.2)
 **Scope:** `ZarinPal-SDK/` library, `tests/`, build/packaging, CI
 **Sources:** `ZarinPal.cs`, `Config.cs`, `Resources/*`, `Validators/Validator.cs`, `Models/*`, `Interfaces/*`, `Extensions/ZarinPalServiceCollectionExtensions.cs`, `Constants/Endpoints.cs`, `Enums/RefundMethod.cs`, `Exceptions/*`, `ZarinPal-SDK.csproj`, `Directory.Build.props`, `global.json`, `.gitignore`, `docs/plans/improvement-plan.md`
-> Status: §2.1–§2.5 implemented. Remaining P0 items: §2.6, §2.7.
+> Status: §2.1–§2.5 implemented; §2.8 resolved in v2.0.3. Remaining P0 items: §2.6, §2.7.
 
 ---
 
@@ -93,7 +93,18 @@ Rejects `https://example.com?x=1` (no `/`), IDN, `http://[::1]`; allows `http://
 
 **Fix (P0-lite):** Keep regex for fast fail + add `Uri.TryCreate(url, UriKind.Absolute, out var u) && (u.Scheme==http/https) && u.Host.Contains(".")` check, or switch fully to `Uri`. Update tests.
 
+### 2.8 ~~`PaymentRequest.Metadata` defaults to null — triggers "The metadata must be an array." (Code -9)~~ — RESOLVED in v2.0.3
+When callers instantiate `PaymentRequest` without explicitly setting `Metadata`, serialization outputs `"metadata": null`. ZarinPal API's Laravel backend enforces `'metadata' => 'array'` and rejects null with HTTP 400 (`code: -9, message: "The metadata must be an array."`).
+*Detailed report and reproduction:* [`docs/BUG-REPORT-METADATA-NULL.md`](docs/BUG-REPORT-METADATA-NULL.md).
+
+**Fix implemented in v2.0.3:** `PaymentRequest.Metadata` defaults to `Array.Empty<object>()` (`Models/PaymentModels.cs`), and `ZarinPal.RequestAsync` normalizes any serialized null `metadata` value to an empty array so an explicitly-set null can also never trigger -9. Covered by unit + integration tests.
+
+**Fix (P0 for v2.0.3):**
+1. Initialize `public object? Metadata { get; set; } = Array.Empty<object>();` in `Models/PaymentModels.cs`.
+2. In `Payments.CreateAsync`, if `Metadata` is empty but `Mobile`/`Email` are provided, auto-populate `Metadata` as `{"mobile": ..., "email": ...}`.
+
 ---
+
 
 ## 3. Findings — P1 Architecture / Design
 

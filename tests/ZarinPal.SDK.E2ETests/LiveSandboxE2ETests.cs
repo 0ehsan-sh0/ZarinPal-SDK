@@ -29,8 +29,7 @@ public class LiveSandboxE2ETests
                 CallbackUrl = "https://example.com/callback",
                 Description = "Live Sandbox Test Payment",
                 Mobile = "09123456789",
-                Email = "sandbox@example.com",
-                Metadata = new object[] { }
+                Email = "sandbox@example.com"
             };
 
             var result = await client.CreateAsync(paymentRequest);

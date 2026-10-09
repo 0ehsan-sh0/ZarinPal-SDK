@@ -210,6 +210,15 @@ public class ZarinPal : IZarinPal, IZarinPalClient
             jsonObject["merchant_id"] = Config.MerchantId;
         }
 
+        // ZarinPal's REST API validates metadata as an array and rejects a JSON null
+        // with validation error code -9 ("The metadata must be an array.").
+        // Normalize a null metadata value to an empty array before sending.
+        if (jsonObject.TryGetPropertyValue("metadata", out var metadataNode) &&
+            (metadataNode is null || metadataNode.GetValueKind() == JsonValueKind.Null))
+        {
+            jsonObject["metadata"] = new JsonArray();
+        }
+
         var json = jsonObject.ToJsonString();
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 

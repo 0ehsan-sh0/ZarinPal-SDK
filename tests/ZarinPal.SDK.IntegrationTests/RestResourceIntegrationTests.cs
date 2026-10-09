@@ -66,6 +66,81 @@ public class RestResourceIntegrationTests
     }
 
     [Fact]
+    public async Task Payments_CreateAsync_UnsetMetadata_SerializesEmptyArray()
+    {
+        _handler.EnqueueResponse(HttpStatusCode.OK, @"{
+            ""data"": {
+                ""code"": 100,
+                ""message"": ""Success"",
+                ""authority"": ""A00000000000000000000000000000000000""
+            }
+        }");
+
+        var request = new PaymentRequest
+        {
+            Amount = 10000,
+            CallbackUrl = "https://example.com/callback",
+            Description = "Order #102",
+            Mobile = "09123456789"
+        };
+
+        await _client.Payments.CreateAsync(request);
+
+        _handler.RequestBodies[0].Should().Contain("\"metadata\":[]");
+        _handler.RequestBodies[0].Should().NotContain("\"metadata\":null");
+    }
+
+    [Fact]
+    public async Task Payments_CreateAsync_ExplicitNullMetadata_SerializesEmptyArray()
+    {
+        _handler.EnqueueResponse(HttpStatusCode.OK, @"{
+            ""data"": {
+                ""code"": 100,
+                ""message"": ""Success"",
+                ""authority"": ""A00000000000000000000000000000000000""
+            }
+        }");
+
+        var request = new PaymentRequest
+        {
+            Amount = 10000,
+            CallbackUrl = "https://example.com/callback",
+            Description = "Order #103",
+            Metadata = null
+        };
+
+        await _client.Payments.CreateAsync(request);
+
+        _handler.RequestBodies[0].Should().Contain("\"metadata\":[]");
+        _handler.RequestBodies[0].Should().NotContain("\"metadata\":null");
+    }
+
+    [Fact]
+    public async Task Payments_CreateAsync_ObjectMetadata_PreservedAsIs()
+    {
+        _handler.EnqueueResponse(HttpStatusCode.OK, @"{
+            ""data"": {
+                ""code"": 100,
+                ""message"": ""Success"",
+                ""authority"": ""A00000000000000000000000000000000000""
+            }
+        }");
+
+        var request = new PaymentRequest
+        {
+            Amount = 10000,
+            CallbackUrl = "https://example.com/callback",
+            Description = "Order #104",
+            Metadata = new Dictionary<string, string> { ["mobile"] = "09123456789" }
+        };
+
+        await _client.Payments.CreateAsync(request);
+
+        _handler.RequestBodies[0].Should().Contain("\"metadata\":{\"mobile\":\"09123456789\"}");
+        _handler.RequestBodies[0].Should().NotContain("\"metadata\":null");
+    }
+
+    [Fact]
     public async Task Payments_FeeCalculationAsync_SendsPostAndParsesResult()
     {
         var responseJson = @"{

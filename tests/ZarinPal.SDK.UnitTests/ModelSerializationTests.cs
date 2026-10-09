@@ -31,6 +31,32 @@ public class ModelSerializationTests
     }
 
     [Fact]
+    public void PaymentRequest_DefaultMetadata_IsEmptyArray()
+    {
+        var request = new PaymentRequest();
+
+        request.Metadata.Should().NotBeNull();
+        request.Metadata.Should().BeOfType<object[]>();
+        ((object[])request.Metadata!).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void PaymentRequest_Default_SerializesMetadataAsEmptyArray()
+    {
+        var request = new PaymentRequest
+        {
+            Amount = 50000,
+            CallbackUrl = "https://example.com/callback",
+            Description = "Test Order"
+        };
+
+        var json = JsonSerializer.Serialize(request);
+
+        json.Should().NotContain("\"metadata\":null");
+        json.Should().Contain("\"metadata\":[]");
+    }
+
+    [Fact]
     public void PaymentResult_Deserialization_MapsFieldsCorrectly()
     {
         var json = @"{

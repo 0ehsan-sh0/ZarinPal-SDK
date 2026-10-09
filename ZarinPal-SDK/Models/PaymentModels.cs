@@ -38,10 +38,11 @@ public class PaymentRequest
     public string? Email { get; set; }
 
     /// <summary>
-    /// Optional metadata payload.
+    /// Optional metadata payload. Defaults to an empty array because the ZarinPal
+    /// API validates metadata as an array and rejects a JSON null with error code -9.
     /// </summary>
     [JsonPropertyName("metadata")]
-    public object? Metadata { get; set; }
+    public object? Metadata { get; set; } = Array.Empty<object>();
 }
 
 /// <summary>
